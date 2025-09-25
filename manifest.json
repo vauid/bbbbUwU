@@ -8,24 +8,25 @@
   "description": "一个有趣的网页应用",
   "icons": [
     {
-      "src": "https://i.postimg.cc/nzP9sgxr/chan-125.png",
+      "src": "https://i.postimg.cc/3wMTwZzh/chan-40.png",
       "sizes": "125x125",
       "type": "image/png"
     },
     {
-      "src": "https://i.postimg.cc/nzP9sgxr/chan-125.png",
+      "src": "https://i.postimg.cc/3wMTwZzh/chan-40.png",
       "sizes": "144x144",
       "type": "image/png"
     },
     {
-      "src": "https://i.postimg.cc/nzP9sgxr/chan-125.png",
+      "src": "https://i.postimg.cc/3wMTwZzh/chan-40.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://i.postimg.cc/nzP9sgxr/chan-125.png",
+      "src": "https://i.postimg.cc/3wMTwZzh/chan-40.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
+
 }
