@@ -7,7 +7,7 @@
     <title>章鱼喷墨机</title>
     <meta name="theme-color" content="#FFFFFF"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/3wMTwZzh/chan-40.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/nzP9sgxr/chan-125.png">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="https://unpkg.com/dompurify@2.3.8/dist/purify.min.js"></script>
@@ -5790,7 +5790,7 @@ border-top: none;
             showToast(`导演模式已${isDirectorMode ? '开启' : '关闭'}`);
         }
 
-        function generateDirectorModePrompt(command) {
+        function generateDirectorModePrompt(command, historyContext = '') {
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             if (!chat) return null;
 
@@ -5802,12 +5802,24 @@ border-top: none;
                 '你正在一个名为“404”的线上聊天软件中扮演一个角色。',
                 '你的新任务是担任一名AI故事导演。你需要根据我下达的“剧情指令”，同时扮演以下两个角色，并演绎出他们之间的对话。'
             );
+            
+            // 新增：插入剧情回顾
+            const historySection = historyContext ? `
+【剧情回顾】
+以下是最近发生的事情，请在此基础上继续发展剧情：
+---
+${historyContext}
+---
+
+` : '';
+
 
             // 3. 重新定义角色和输出规则
             const roleA = { name: chat.myName || '我', persona: chat.myPersona || '一个普通人' };
             const roleB = { name: chat.remarkName || chat.name, persona: chat.persona || '一个友好的人' };
 
             const roleDefinitions = `
+${historySection}
 角色和对话规则：
 1.  **角色A**:
     -   昵称: ${roleA.name}
@@ -5909,8 +5921,18 @@ border-top: none;
                 switchScreen('api-settings-screen');
                 return;
             }
+            
+            const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
+            if (!chat) {
+                showToast('无法生成导演指令，请检查聊天对象是否存在。');
+                return;
+            }
 
-            const systemPrompt = generateDirectorModePrompt(commandText);
+            // 获取历史记录作为上下文
+            const historySlice = chat.history.slice(-chat.maxMemory);
+            const historyContext = historySlice.map(msg => msg.content).join('\n');
+
+            const systemPrompt = generateDirectorModePrompt(commandText, historyContext);
             if (!systemPrompt) {
                 showToast('无法生成导演指令，请检查聊天对象是否存在。');
                 return;
@@ -13752,4 +13774,3 @@ function renderForumPosts(posts) {
 </body>
 
 </html>
-
