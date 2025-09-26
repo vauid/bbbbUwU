@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="https://unpkg.com/dompurify@2.3.8/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <link rel="manifest" href="manifest.json">
 
     <style>
@@ -4639,6 +4640,20 @@ border-top: none;
 </div>
 
 
+<div id="storage-analysis-screen" class="screen">
+    <header class="app-header">
+        <button class="back-btn" data-target="home-screen">‹</button>
+        <div class="title-container">
+            <h1 class="title">存储分析</h1>
+        </div>
+        <div class="placeholder"></div>
+    </header>
+    <main class="content" style="display: flex; align-items: center; justify-content: center;">
+        <div id="storage-chart-container" style="width: 100%; height: 400px;"></div>
+    </main>
+</div>
+
+
 <div id="peek-messages-screen" class="screen">
 
         <header class="app-header">
@@ -5107,7 +5122,8 @@ border-top: none;
             'forum-screen': {name: '论坛', url: 'https://i.postimg.cc/fyPVBZf1/1758451183605.png'},
 'music-screen': {name: '音乐', url: 'https://i.postimg.cc/ydd65txK/1758451018266.png'},
 'diary-screen': {name: '日记本', url: 'https://i.postimg.cc/bJBLzmFH/chan-70.png'},
-'piggy-bank-screen': {name: '存钱罐', url: 'https://i.postimg.cc/3RmWRRtS/chan-18.png'}
+'piggy-bank-screen': {name: '存钱罐', url: 'https://i.postimg.cc/3RmWRRtS/chan-18.png'},
+'storage-analysis-screen': {name: '存储分析', url: 'https://i.postimg.cc/65tXwK2j/chan-128.png'}
         };
 
 
@@ -5873,7 +5889,7 @@ ${historySection}
     c) 语音: [${roleA.name}的语音：{语音内容}] 或 [${roleB.name}的语音：{语音内容}]
     d) 照片/视频: [${roleA.name}发来的照片/视频：{描述}] 或 [${roleB.name}发来的照片/视频：{描述}]
     e) 转账: [${roleA.name}的转账：{金额}元；备注：{备注}] 或 [${roleB.name}的转账：{金额}元；备注：{备注}]
-    f) 表情包/图片: [${roleA.name}发送的表情包：{表情包代码}] 或 [${roleB.name}发送的表情包：{表情包代码}]。注意：禁止凭空生成，必须从世界书内的表情包列表中选择。
+    f) 表情包/图片: [${roleA.name}发送的表情包：{表情包路径}] 或 [${roleB.name}发送的表情包：{表情包路径}]。注意：这里的路径不需要包含"https://i.postimg.cc/"，只需要提供后面的部分，例如 "害羞vHLfrV3K/1.jpg"。
     g) 引用回复: [${roleA.name}引用“{某条消息内容}”并回复：{回复内容}] 或 [${roleB.name}引用“{某条消息内容}”并回复：{回复内容}]
     h) 撤回消息(此条不显示): [${roleA.name}撤回了上一条消息：{被撤回消息的原文}] 或 [${roleB.name}撤回了上一条消息：{被撤回消息的原文}]
     i) 接收礼物/转账或更新状态等特殊指令，两个角色均可使用，格式不变。
@@ -6462,6 +6478,7 @@ return Promise.resolve();
             setupForumBindingFeature();
             setupForumFeature();
             setupShareModal();
+            setupStorageAnalysisScreen();
         };
 
         function setupMemoryJournalScreen() {
@@ -8173,6 +8190,7 @@ return Promise.resolve();
                         <a href="#" class="app-icon" data-target="world-book-screen"><img src="${getIcon('world-book-screen')}" alt="World Book" class="icon-img"><span class="app-name">${defaultIcons['world-book-screen'].name}</span></a>
                         <a href="#" class="app-icon" data-target="customize-screen"><img src="${getIcon('customize-screen')}" alt="Customize" class="icon-img"><span class="app-name">${defaultIcons['customize-screen'].name}</span></a>
                         <a href="#" class="app-icon" data-target="tutorial-screen"><img src="${getIcon('tutorial-screen')}" alt="Tutorial" class="icon-img"><span class="app-name">${defaultIcons['tutorial-screen'].name}</span></a>
+                        <a href="#" class="app-icon" data-target="storage-analysis-screen"><img src="${getIcon('storage-analysis-screen')}" alt="存储分析" class="icon-img"><span class="app-name">${defaultIcons['storage-analysis-screen'].name}</span></a>
                     </div>
                 </div>
 
@@ -13029,6 +13047,86 @@ function renderPostDetail(post) {
 
 
 
+
+        function setupStorageAnalysisScreen() {
+            const screen = document.getElementById('storage-analysis-screen');
+            const chartContainer = document.getElementById('storage-chart-container');
+            let myChart = null;
+
+            function renderStorageChart(info) {
+                if (!info) {
+                    chartContainer.innerHTML = '<p class="placeholder-text">无法获取存储数据。</p>';
+                    return;
+                }
+
+                if (myChart) {
+                    myChart.dispose();
+                }
+                myChart = echarts.init(chartContainer);
+
+                const dataForChart = [
+                    { value: info.storageSize, name: '基础数据' },
+                    { value: info.messageSize, name: '消息数据' },
+                ];
+
+                const option = {
+                    title: {
+                        text: '存储空间占用分析',
+                        subtext: `总大小: ${(info.totalSize / 1024).toFixed(2)} KB`,
+                        left: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b} : {c} bytes ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                    },
+                    series: [
+                        {
+                            name: '数据类型',
+                            type: 'pie',
+                            radius: '50%',
+                            data: dataForChart,
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }
+                    ]
+                };
+                myChart.setOption(option);
+            }
+
+            const observer = new MutationObserver(async (mutations) => {
+                for (let mutation of mutations) {
+                    if (mutation.attributeName === 'class') {
+                        const isActive = screen.classList.contains('active');
+                        if (isActive) {
+                            chartContainer.innerHTML = '<p class="placeholder-text">正在加载数据...</p>';
+                            try {
+                                const info = await dataStorage.getStorageInfo();
+                                renderStorageChart(info);
+                            } catch (error) {
+                                chartContainer.innerHTML = `<p class="placeholder-text">加载图表失败: ${error.message}</p>`;
+                            }
+                        }
+                    }
+                }
+            });
+
+            observer.observe(screen, { attributes: true });
+
+            window.addEventListener('resize', () => {
+                if (myChart) {
+                    myChart.resize();
+                }
+            });
+        }
 
 function setupForumFeature() {
     const refreshBtn = document.getElementById('forum-refresh-btn');
