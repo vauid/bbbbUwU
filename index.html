@@ -692,6 +692,41 @@
             text-align: center;
         }
 
+        /* --- 导演指令气泡新样式 --- */
+        .director-command-bubble {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .director-command-timestamp {
+            background-color: #e0e0e0;
+            color: #757575;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .director-command-timestamp:hover {
+            background-color: #d1d1d1;
+        }
+
+        .director-command-content {
+            background-color: #f5f5f5;
+            color: #555;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            margin-top: 5px;
+            max-width: 80%;
+            text-align: left;
+            line-height: 1.5;
+        }
+
         /* --- 新增：撤回消息样式 --- */
         .withdrawn-message {
             color: #999;
@@ -3719,7 +3754,11 @@ border-top: none;
 /* --- 导演模式指示器样式 --- */
 #director-mode-indicator {
     display: none; /* 默认隐藏 */
-    margin-left: 8px;
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 6px;
     width: 24px;
     height: 24px;
     opacity: 0.7;
@@ -9370,7 +9409,7 @@ if (newTextRaw) {
 
         function createMessageBubbleElement(message) {
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-            const {role, content, timestamp, id, transferStatus, giftStatus, stickerData, senderId, quote, isWithdrawn, originalContent} = message;
+            const {role, content, timestamp, id, transferStatus, giftStatus, stickerData, senderId, quote, isWithdrawn, originalContent, type} = message;
 
             const wrapper = document.createElement('div');
             wrapper.dataset.id = id;
@@ -9404,12 +9443,29 @@ if (newTextRaw) {
             const timeSkipMatch = content.match(timeSkipRegex);
             const inviteMatch = content.match(inviteRegex);
             const renameMatch = content.match(renameRegex);
+            const isDirectorCommand = type === 'director_command';
             const invisibleRegex = /\[.*?(?:接收|退回).*?的转账\]|\[.*?更新状态为：.*?\]|\[.*?已接收礼物\]|\[system:.*?\]|\[系统情景通知：.*?\]/;
             if (invisibleRegex.test(content)) {
                 return null;
             }
 
-            if (timeSkipMatch || inviteMatch || renameMatch) {
+            if (isDirectorCommand) {
+                wrapper.className = 'message-wrapper system-notification';
+                const commandText = content.replace('[system-display:🎬 导演指令：', '').replace(']', '');
+                const timeString = new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+                wrapper.innerHTML = `
+                    <div class="director-command-bubble">
+                        <div class="director-command-timestamp" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                            ${timeString}
+                        </div>
+                        <div class="director-command-content" style="display: none;">
+                            🎬 导演指令：${commandText}
+                        </div>
+                    </div>
+                `;
+                return wrapper;
+            } else if (timeSkipMatch || inviteMatch || renameMatch) {
                 wrapper.className = 'message-wrapper system-notification';
                 let bubbleText = '';
                 if (timeSkipMatch) bubbleText = timeSkipMatch[1];
@@ -9840,6 +9896,7 @@ if (newTextRaw) {
         const displayMessage = {
             id: `msg_director_cmd_${Date.now()}`,
             role: 'system',
+            type: 'director_command', // Add a type for easy identification
             content: `[system-display:🎬 导演指令：${text}]`,
             parts: [],
             timestamp: Date.now()
