@@ -9552,16 +9552,16 @@ if (newTextRaw) {
 
 
 
-            if ((isSent && sentStickerMatch && stickerData) || (!isSent && receivedStickerMatch)) {
+            if ((isSent && sentStickerMatch && stickerData) || (receivedStickerMatch)) {
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = 'image-bubble';
                 let stickerSrc = '';
 
-                if (isSent) {
+                if (isSent && stickerData) {
                     // 如果是你自己发的表情包，直接使用数据
                     stickerSrc = stickerData;
                 } else {
-                    // 如果是AI发的表情包，我们需要处理路径
+                    // 如果是AI发的表情包（包括导演模式下扮演用户），我们需要处理路径
                     // 原始路径，例如："害羞vHLfrV3K/1.jpg"
                             // --- 这是实现您新需求的修改 ---
 
@@ -9599,10 +9599,8 @@ if (newTextRaw) {
                             finalPath = rawPath; // 作为备用方案，如果正则没匹配上
                         }
                     } else {
-                        // 对于 postimg 等其他图床，保留原有的提取逻辑
-                        const pathExtractionRegex = /[a-zA-Z0-9]+\/.*$/;
-                        const extractedPathMatch = rawPath.match(pathExtractionRegex);
-                        finalPath = extractedPathMatch ? extractedPathMatch[0] : rawPath;
+                        // 对于 postimg 等其他图床，直接使用AI返回的路径
+                        finalPath = rawPath;
                     }
 
                     // 5. 拼接最终URL
