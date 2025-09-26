@@ -3808,6 +3808,47 @@ border-top: none;
     </style>
     <style id="global-css-style"></style>
     <style>
+/* --- 存储分析详情列表样式 --- */
+.storage-detail-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.storage-detail-item:last-child {
+    border-bottom: none;
+}
+.storage-color-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+.storage-detail-info {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+.storage-detail-name {
+    font-size: 16px;
+    color: #333;
+    font-weight: 500;
+}
+.storage-detail-size {
+    font-size: 15px;
+    color: #666;
+    text-align: right;
+}
+.storage-detail-percentage {
+    font-size: 12px;
+    color: #999;
+    width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+}
         /* --- 引用消息样式 --- */
         #reply-preview-bar {
             display: none; /* 默认隐藏 */
@@ -4648,8 +4689,9 @@ border-top: none;
         </div>
         <div class="placeholder"></div>
     </header>
-    <main class="content" style="display: flex; align-items: center; justify-content: center;">
-        <div id="storage-chart-container" style="width: 100%; height: 400px;"></div>
+    <main class="content" style="flex-direction: column; justify-content: flex-start; padding: 20px; gap: 20px;">
+        <div id="storage-chart-container" style="width: 100%; height: 300px; flex-shrink: 0;"></div>
+        <div id="storage-details-list" style="width: 100%; overflow-y: auto;"></div>
     </main>
 </div>
 
@@ -5843,16 +5885,29 @@ border-top: none;
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             if (!chat) return null;
 
-            // 1. 完整复制并改造 generatePrivateSystemPrompt
-            let basePrompt = generatePrivateSystemPrompt(chat);
+            // ================== 步骤 1: 修复世界书上下文 ==================
+            // 从单聊模式中复制世界书加载逻辑
+            const worldBooksBefore = (chat.worldBookIds || []).map(id => db.worldBooks.find(wb => wb.id === id && wb.position === 'before')).filter(Boolean).map(wb => wb.content).join('\n');
+            const worldBooksAfter = (chat.worldBookIds || []).map(id => db.worldBooks.find(wb => wb.id === id && wb.position === 'after')).filter(Boolean).map(wb => wb.content).join('\n');
+            const now = new Date();
+            const currentTime = `${now.getFullYear()}年${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-            // 2. 修改核心任务
-            basePrompt = basePrompt.replace(
-                '你正在一个名为“404”的线上聊天软件中扮演一个角色。',
-                '你的新任务是担任一名AI故事导演。你需要根据我下达的“剧情指令”，同时扮演以下两个角色，并演绎出他们之间的对话。'
-            );
-            
-            // 新增：插入剧情回顾
+            // 构建基础指令
+            let prompt = `你的新任务是担任一名AI故事导演。你需要根据我下达的“剧情指令”，同时扮演以下两个角色，并演绎出他们之间的对话。\n`;
+            prompt += `核心规则：\n`;
+            prompt += `A. 当前时间：现在是 ${currentTime}。\n`;
+            prompt += `B. 纯线上互动：这是一个完全虚拟的线上聊天。你扮演的角色和我之间没有任何线下关系。严禁提出任何关于线下见面、现实世界互动或转为其他非本平台联系方式的建议。你必须始终保持在线角色的身份。\n\n`;
+
+            // 插入共同回忆
+            const favoritedJournals = (chat.memoryJournals || [])
+                .filter(j => j.isFavorited)
+                .map(j => `标题：${j.title}\n内容：${j.content}`)
+                .join('\n\n---\n\n');
+            if (favoritedJournals) {
+                prompt += `【共同回忆】\n这是你需要长期记住的、我们之间发生过的往事背景：\n${favoritedJournals}\n\n`;
+            }
+
+            // 插入剧情回顾
             const historySection = historyContext ? `
 【剧情回顾】
 以下是最近发生的事情，请在此基础上继续发展剧情：
@@ -5861,52 +5916,56 @@ ${historyContext}
 ---
 
 ` : '';
+            prompt += historySection;
 
-
-            // 3. 重新定义角色和输出规则
+            // 定义角色
             const roleA = { name: chat.myName || '我', persona: chat.myPersona || '一个普通人' };
             const roleB = { name: chat.remarkName || chat.name, persona: chat.persona || '一个友好的人' };
 
-            const roleDefinitions = `
-${historySection}
-角色和对话规则：
-1.  **角色A**:
-    -   昵称: ${roleA.name}
-    -   人设: ${roleA.persona}
-2.  **角色B**:
-    -   昵称: ${roleB.name}
-    -   人设: ${roleB.persona}
-3.  **本次剧情指令**: "${command}"
+            // 插入世界书和角色定义
+            prompt += `角色和对话规则：\n`;
+            if (worldBooksBefore) {
+                prompt += `${worldBooksBefore}\n`;
+            }
+            prompt += `1.  **角色A**: \n    -   昵称: ${roleA.name}\n    -   人设: ${roleA.persona}\n`;
+            prompt += `2.  **角色B**: \n    -   昵称: ${roleB.name}\n    -   人设: ${roleB.persona}\n`;
+            if (worldBooksAfter) {
+                prompt += `${worldBooksAfter}\n`;
+            }
+            prompt += `3.  **本次剧情指令**: "${command}"\n`;
+            
+            // ================== 步骤 2: 补上互动能力 ==================
+            // 从单聊模式中复制互动规则
+            prompt += `4. 两个角色都可以发送和接收特殊格式的消息，请根据其内容和角色设定进行演绎。
+5. ✨重要✨ 当一个角色给另一个角色送礼物时，接收方必须通过发送一条指令来表示已接收礼物。格式必须为：[${roleA.name}已接收礼物] 或 [${roleB.name}已接收礼物]。
+6. ✨重要✨ 当一个角色给另一个角色转账时，接收方必须对此做出回应。格式必须为以下之一：
+    a) 接收转账: [${roleA.name}接收${roleB.name}的转账] 或 [${roleB.name}接收${roleA.name}的转账]
+    b) 退回转账: [${roleA.name}退回${roleB.name}的转账] 或 [${roleB.name}退回${roleA.name}的转账]
+7. ✨重要✨ 两个角色都可以主动给对方转账或送礼物。
+8. ✨重要✨ ${roleB.name}可以在对话中**积极地**改变自己的状态。格式为：[${roleB.name}更新状态为：{当前状态}]。
+9. ✨重要✨ 两个角色都可以像真人一样撤回自己刚刚发送的消息。格式为：[${roleA.name}撤回了上一条消息：{原文}] 或 [${roleB.name}撤回了上一条消息：{原文}]。
+10. ✨重要✨ 两个角色都可以引用自己或对方的单独一条消息进行针对性的回复。
+11. 你的所有回复都必须直接是聊天内容，绝对不允许包含任何如[心理活动]、(动作)、*环境描写*等多余的、在括号或星号里的叙述性文本。
 `;
-            // 替换掉原有的角色定义部分
-            basePrompt = basePrompt.replace(/角色和对话规则：[\s\S]*?4\. 我的消息中可能会出现特殊格式/g, roleDefinitions + '4. 你的消息中可能会出现特殊格式');
 
-            // 升级输出规则
-            const outputRuleRegex = /13\. 你的输出格式必须严格遵循以下格式：([\s\S]*?)14\./;
-            const newOutputRule = `13. 你的输出格式必须严格遵循以下格式，在每条消息前明确标注发言人昵称：
+            // ================== 步骤 3: 保留旧的表情包规则 (暂不修改) ==================
+            prompt += `12. 你拥有发送表情包的能力。这是一个可选功能。格式为：[${roleA.name}发送的表情包：图片URL] 或 [${roleB.name}发送的表情包：图片URL]。\n`;
+
+            // 最终输出格式
+            prompt += `13. 你的输出格式必须严格遵循以下格式，在每条消息前明确标注发言人昵称：
     a) 普通消息: [${roleA.name}的消息：{消息内容}] 或 [${roleB.name}的消息：{消息内容}]
     b) 礼物: [${roleA.name}送来的礼物：{礼物描述}] 或 [${roleB.name}送来的礼物：{礼物描述}]
     c) 语音: [${roleA.name}的语音：{语音内容}] 或 [${roleB.name}的语音：{语音内容}]
     d) 照片/视频: [${roleA.name}发来的照片/视频：{描述}] 或 [${roleB.name}发来的照片/视频：{描述}]
     e) 转账: [${roleA.name}的转账：{金额}元；备注：{备注}] 或 [${roleB.name}的转账：{金额}元；备注：{备注}]
-    f) 表情包/图片: [${roleA.name}发送的表情包：{表情包路径}] 或 [${roleB.name}发送的表情包：{表情包路径}]。注意：这里的路径不需要包含"https://i.postimg.cc/"，只需要提供后面的部分，例如 "害羞vHLfrV3K/1.jpg"。
+    f) 表情包: [${roleA.name}发送的表情包：{表情包路径}] 或 [${roleB.name}发送的表情包：{表情包路径}]。注意：这里的路径不需要包含"https://i.postimg.cc/"，只需要提供后面的部分，例如 "害羞vHLfrV3K/1.jpg"。
     g) 引用回复: [${roleA.name}引用“{某条消息内容}”并回复：{回复内容}] 或 [${roleB.name}引用“{某条消息内容}”并回复：{回复内容}]
     h) 撤回消息(此条不显示): [${roleA.name}撤回了上一条消息：{被撤回消息的原文}] 或 [${roleB.name}撤回了上一条消息：{被撤回消息的原文}]
     i) 接收礼物/转账或更新状态等特殊指令，两个角色均可使用，格式不变。
-14.`;
-            basePrompt = basePrompt.replace(outputRuleRegex, newOutputRule);
-            
-            // 移除关于“我”的规则，因为现在两个角色都是AI
-            basePrompt = basePrompt.replace(/我的消息中可能会出现特殊格式，请根据其内容和你的角色设定进行回应：/g, '两个角色都可以发送和接收特殊格式的消息，请根据其内容和角色设定进行演绎：');
-            basePrompt = basePrompt.replace(/\[${chat.myName}.*?\]/g, (match) => match.replace(chat.myName, '角色A或角色B'));
+14. **场景长度**: 请根据角色设定，参考剧情指令自然地生成一段对话，对话的总消息数应在15-25条，并根据当前行为/心情/地点变化实时更新${roleB.name}的状态。
+15. 不要主动结束对话，保持你的人设，自然地进行对话。`;
 
-            // 新增：替换掉与导演模式冲突的“对话节奏”规则
-            basePrompt = basePrompt.replace(
-                /14\. \*\*对话节奏\*\*[\s\S]*?15\./,
-                '14. **场景长度**: 请根据角色设定，参考剧情指令自然地生成一段对话，对话的总消息数应在15-25条。\n15.'
-            );
-
-            return basePrompt;
+            return prompt;
         }
 
         async function parseAndRenderScene(sceneText) {
@@ -9150,7 +9209,9 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
 
             // 如果消息未被撤回，则显示正常菜单
             if (!isWithdrawn) {
-                if (!isImageRecognitionMsg && !isVoiceMessage && !isStickerMessage && !isPhotoVideoMessage && !isTransferMessage && !isGiftMessage && !isInvisibleMessage) {
+                const canBeEdited = !isImageRecognitionMsg && !isVoiceMessage && !isPhotoVideoMessage && !isTransferMessage && !isGiftMessage && !isInvisibleMessage;
+
+                if (canBeEdited || isStickerMessage) {
                     menuItems.push({label: '编辑', action: () => startMessageEdit(messageId)});
                 }
                 
@@ -9238,14 +9299,17 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
 const message = chat.history.find(m => m.id === messageId);
 if (!message) return;
 
-// --- 从这里开始是替换后的新代码 ---
 let contentToEdit = message.content;
-const plainTextMatch = contentToEdit.match(/^\[.*?：([\s\S]*)\]$/);
-if (plainTextMatch && plainTextMatch[1]) {
-    contentToEdit = plainTextMatch[1].trim();
+const isStickerMessage = /\[.*?的表情包：.*?\]|\[.*?发送的表情包：.*?\]/.test(contentToEdit);
+
+// If it's NOT a sticker, then strip the brackets. Otherwise, show the full content.
+if (!isStickerMessage) {
+    const plainTextMatch = contentToEdit.match(/^\[.*?：([\s\S]*)\]$/);
+    if (plainTextMatch && plainTextMatch[1]) {
+        contentToEdit = plainTextMatch[1].trim();
+    }
+    contentToEdit = contentToEdit.replace(/\[发送时间:.*?\]/g, '').trim();
 }
-// --- 到这里结束 ---
-contentToEdit = contentToEdit.replace(/\[发送时间:.*?\]/g, '').trim(); // <--- 加上这一行
 messageEditInput.value = contentToEdit;
 
             messageInputDefault.style.display = 'none';
@@ -9260,20 +9324,26 @@ messageEditInput.value = contentToEdit;
            // ...
 const newTextRaw = messageEditInput.value.trim();
 if (newTextRaw) {
-    let newText = newTextRaw; // 先把干净的文字存起来
+    const originalMessage = chat.history[messageIndex];
+    // Re-check if the *original* message was a sticker to decide the save logic
+    const wasStickerMessage = /\[.*?的表情包：.*?\]|\[.*?发送的表情包：.*?\]/.test(originalMessage.content);
 
-
-
-
-    const oldContent = chat.history[messageIndex].content;
-    const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
     let newContent;
 
-    if (prefixMatch && prefixMatch[1]) {
-        const prefix = prefixMatch[1];
-        newContent = `${prefix}${newText}]`;
-    } else {
+    if (wasStickerMessage) {
+        // If editing a sticker, save the raw input. This allows fixing format errors.
         newContent = newTextRaw;
+    } else {
+        // For regular text messages, reconstruct the message with the prefix.
+        const oldContent = originalMessage.content;
+        const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
+        if (prefixMatch && prefixMatch[1]) {
+            const prefix = prefixMatch[1];
+            newContent = `${prefix}${newTextRaw}]`;
+        } else {
+            // Fallback for messages that don't have the standard prefix.
+            newContent = newTextRaw;
+        }
     }
 
     chat.history[messageIndex].content = newContent;
@@ -9281,11 +9351,11 @@ if (newTextRaw) {
     if (chat.history[messageIndex].parts) {
         chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
     }
-                await saveData();
-                currentPage = 1;
-                renderMessages(false, true);
-                renderChatList();
-            }
+    await saveData();
+    currentPage = 1;
+    renderMessages(false, true);
+    renderChatList();
+}
             cancelMessageEdit();
         }
 
@@ -9562,8 +9632,9 @@ if (newTextRaw) {
                     stickerSrc = stickerData;
                 } else {
                     // 如果是AI发的表情包（包括导演模式下扮演用户），我们需要处理路径
-                    // 原始路径，例如："害羞vHLfrV3K/1.jpg"
-                            // --- 这是实现您新需求的修改 ---
+                    const rawValue = receivedStickerMatch[1].trim();
+                    console.log('【调试】AI返回的原始表情包值:', rawValue); // <-- 调试日志1
+                    let finalPath;
 
                     // 1. 检查当前角色的世界书是否包含 'catbox' 关键词
                     let useCatbox = false;
@@ -9573,38 +9644,30 @@ if (newTextRaw) {
                             .filter(Boolean)
                             .map(wb => wb.content)
                             .join(' ');
-
                         if (worldBookContent.toLowerCase().includes('catbox')) {
                             useCatbox = true;
                         }
                     }
 
-                    // 2. 根据检查结果，选择图床前缀
-                    const imageHost = useCatbox ? 'https://files.catbox.moe/' : 'https://i.postimg.cc/';
-
-                   // 3. 从AI回复中获取原始路径
-                    const rawPath = receivedStickerMatch[1].trim();
-        
-                                        // 4. 关键: 根据图床选择不同的路径处理方式
-                    let finalPath;
+                    // 2. 根据图床类型，使用不同的正则提取路径
                     if (useCatbox) {
-                        // 对于 Catbox，AI返回 "情绪+文件名" (例如 "焦虑2a9wte.jpeg")
-                        // 我们需要用正则从中提取出真正的文件名 (例如 "2a9wte.jpeg")
                         const catboxFileRegex = /[a-z0-9]+\.(jpeg|png|gif|jpg)$/i;
-                        const pathMatch = rawPath.match(catboxFileRegex);
-                        
-                        if (pathMatch) {
-                            finalPath = pathMatch[0]; // 使用匹配到的文件名
-                        } else {
-                            finalPath = rawPath; // 作为备用方案，如果正则没匹配上
-                        }
+                        const pathMatch = rawValue.match(catboxFileRegex);
+                        finalPath = pathMatch ? pathMatch[0] : rawValue; // 优先使用匹配到的文件名
+                        stickerSrc = `https://files.catbox.moe/${finalPath}`;
                     } else {
-                        // 对于 postimg 等其他图床，直接使用AI返回的路径
-                        finalPath = rawPath;
+                        // 为 postimg 等其他图床设计的通用正则，提取路径部分
+                        const generalPathRegex = /([a-zA-Z0-9\-_/]+\.(?:jpg|jpeg|png|gif|webp))$/;
+                        const pathMatch = rawValue.match(generalPathRegex);
+                        finalPath = pathMatch ? pathMatch[1] : rawValue; // 优先使用匹配到的路径
+                        stickerSrc = `https://i.postimg.cc/${finalPath}`;
                     }
 
-                    // 5. 拼接最终URL
-                    stickerSrc = `${imageHost}${finalPath}`;
+                    // 3. 最终检查：如果提取出的路径本身就是完整URL（例如在正则匹配失败时），则直接使用
+                    if (finalPath.startsWith('http')) {
+                        stickerSrc = finalPath;
+                    }
+                    console.log('【调试】最终生成的表情包URL:', stickerSrc); // <-- 调试日志2
                 }
 
                 bubbleElement.innerHTML = `<img src="${stickerSrc}" alt="表情包">`;
@@ -13052,8 +13115,10 @@ function renderPostDetail(post) {
             let myChart = null;
 
             function renderStorageChart(info) {
+                const listContainer = document.getElementById('storage-details-list');
                 if (!info || !info.categorizedSizes) {
                     chartContainer.innerHTML = '<p class="placeholder-text">无法获取存储数据。</p>';
+                    listContainer.innerHTML = ''; // Also clear the list
                     return;
                 }
 
@@ -13071,39 +13136,70 @@ function renderPostDetail(post) {
                     { value: categorizedSizes.personalization, name: '个性化设置' },
                     { value: categorizedSizes.apiAndCore, name: 'API与核心配置' },
                     { value: categorizedSizes.other, name: '其他' },
-                ].filter(item => item.value > 0); // 只显示有数据的分区
+                ].filter(item => item.value > 0);
 
                 const option = {
                     title: {
                         text: '存储空间占用分析',
                         subtext: `总大小: ${(totalSize / 1024).toFixed(2)} KB`,
-                        left: 'center'
+                        left: 'center',
+                        top: '5%'
                     },
                     tooltip: {
                         trigger: 'item',
                         formatter: '{a} <br/>{b} : {c} bytes ({d}%)'
                     },
                     legend: {
-                        orient: 'vertical',
-                        left: 'left',
+                        show: false // We will use our custom list as legend
                     },
                     series: [
                         {
                             name: '数据类型',
                             type: 'pie',
-                            radius: '50%',
-                            data: dataForChart,
+                            radius: ['40%', '60%'], // Make it a donut chart
+                            center: ['50%', '60%'],
+                            avoidLabelOverlap: false,
+                            label: {
+                                show: false,
+                                position: 'center'
+                            },
                             emphasis: {
-                                itemStyle: {
-                                    shadowBlur: 10,
-                                    shadowOffsetX: 0,
-                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                label: {
+                                    show: true,
+                                    fontSize: '20',
+                                    fontWeight: 'bold'
                                 }
-                            }
+                            },
+                            labelLine: {
+                                show: false
+                            },
+                            data: dataForChart
                         }
                     ]
                 };
                 myChart.setOption(option);
+
+                // --- NEW: Render the details list ---
+                listContainer.innerHTML = '';
+                const chartColors = myChart.getOption().color;
+
+                dataForChart.forEach((item, index) => {
+                    const percentage = totalSize > 0 ? ((item.value / totalSize) * 100).toFixed(2) : 0;
+                    const sizeInKb = (item.value / 1024).toFixed(2);
+                    const color = chartColors[index % chartColors.length];
+
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'storage-detail-item';
+                    itemEl.innerHTML = `
+                        <div class="storage-color-indicator" style="background-color: ${color};"></div>
+                        <div class="storage-detail-info">
+                            <span class="storage-detail-name">${item.name}</span>
+                            <span class="storage-detail-size">${sizeInKb} KB</span>
+                        </div>
+                        <span class="storage-detail-percentage">${percentage}%</span>
+                    `;
+                    listContainer.appendChild(itemEl);
+                });
             }
 
             const observer = new MutationObserver(async (mutations) => {
