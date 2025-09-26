@@ -5618,49 +5618,49 @@ border-top: none;
                         this.db.messageChunks.toArray()
                     ]);
 
-                    const storageSize = storageItems.reduce((sum, item) => sum + item.value.length, 0);
-                    const messageSize = messageChunks.reduce((sum, chunk) => sum + JSON.stringify(chunk.messages).length, 0);
-                    const totalSize = storageSize + messageSize;
-
-                    const info = {
-                        itemCount: storageItems.length,
-                        chunkCount: messageChunks.length,
-                        totalSize: totalSize,
-                        storageSize: storageSize,
-                        messageSize: messageSize,
-                        cacheSize: this.cache.size,
-                        items: storageItems.map(item => ({
-                            key: item.key,
-                            size: item.value.length,
-                            timestamp: new Date(item.timestamp).toLocaleString()
-                        }))
+                    const categorizedSizes = {
+                        messages: 0,
+                        charactersAndGroups: 0,
+                        worldAndForum: 0,
+                        personalization: 0,
+                        apiAndCore: 0,
+                        other: 0
                     };
 
-                    // 更新显示
-                    this.updateStorageDisplay(info);
+                    categorizedSizes.messages = messageChunks.reduce((sum, chunk) => sum + JSON.stringify(chunk.messages).length, 0);
+
+                    storageItems.forEach(item => {
+                        const size = item.value.length;
+                        const key = item.key;
+
+                        if (key.startsWith('character_') || key.startsWith('group_')) {
+                            categorizedSizes.charactersAndGroups += size;
+                        } else if (['worldBooks', 'forumPosts', 'forumBindings'].includes(key)) {
+                            categorizedSizes.worldAndForum += size;
+                        } else if (['wallpaper', 'fontUrl', 'customIcons', 'bubbleCssPresets', 'globalCss', 'myPersonaPresets', 'homeSignature', 'homeWidgetSettings', 'myStickers'].includes(key)) {
+                            categorizedSizes.personalization += size;
+                        } else if (['apiSettings', 'apiPresets', '章鱼喷墨机'].includes(key)) {
+                            categorizedSizes.apiAndCore += size;
+                        } else {
+                            categorizedSizes.other += size;
+                        }
+                    });
+                    
+                    const totalSize = Object.values(categorizedSizes).reduce((sum, size) => sum + size, 0);
+
+                    const info = {
+                        totalSize: totalSize,
+                        categorizedSizes: categorizedSizes,
+                        itemCount: storageItems.length,
+                        chunkCount: messageChunks.length,
+                        cacheSize: this.cache.size,
+                    };
 
                     return info;
                 } catch (error) {
                     console.error('获取存储信息失败:', error);
-
                     return null;
                 }
-            }
-
-            // 更新存储信息显示
-            updateStorageDisplay(info) {
-                const monitor = document.getElementById('performance-monitor');
-                if (!monitor) return;
-
-                document.getElementById('storage-size').textContent = `${(info.totalSize / 1024).toFixed(1)} KB`;
-                document.getElementById('chunk-count').textContent = info.chunkCount.toString();
-
-                // 设置存储大小颜色指示器
-                const sizeElement = document.getElementById('storage-size');
-                const sizeKB = info.totalSize / 1024;
-                if (sizeKB < 1000) sizeElement.className = 'metric-value good';
-                else if (sizeKB < 5000) sizeElement.className = 'metric-value warning';
-                else sizeElement.className = 'metric-value error';
             }
 
             // 数据迁移方法（从旧版本迁移）
@@ -13054,7 +13054,7 @@ function renderPostDetail(post) {
             let myChart = null;
 
             function renderStorageChart(info) {
-                if (!info) {
+                if (!info || !info.categorizedSizes) {
                     chartContainer.innerHTML = '<p class="placeholder-text">无法获取存储数据。</p>';
                     return;
                 }
@@ -13064,15 +13064,21 @@ function renderPostDetail(post) {
                 }
                 myChart = echarts.init(chartContainer);
 
+                const { categorizedSizes, totalSize } = info;
+
                 const dataForChart = [
-                    { value: info.storageSize, name: '基础数据' },
-                    { value: info.messageSize, name: '消息数据' },
-                ];
+                    { value: categorizedSizes.messages, name: '消息数据' },
+                    { value: categorizedSizes.charactersAndGroups, name: '角色与群组' },
+                    { value: categorizedSizes.worldAndForum, name: '世界书与论坛' },
+                    { value: categorizedSizes.personalization, name: '个性化设置' },
+                    { value: categorizedSizes.apiAndCore, name: 'API与核心配置' },
+                    { value: categorizedSizes.other, name: '其他' },
+                ].filter(item => item.value > 0); // 只显示有数据的分区
 
                 const option = {
                     title: {
                         text: '存储空间占用分析',
-                        subtext: `总大小: ${(info.totalSize / 1024).toFixed(2)} KB`,
+                        subtext: `总大小: ${(totalSize / 1024).toFixed(2)} KB`,
                         left: 'center'
                     },
                     tooltip: {
