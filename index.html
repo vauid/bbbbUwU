@@ -33,6 +33,11 @@
         html {
             height: 100%;
             overflow: hidden;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        html::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, and Opera */
         }
 
         *,
@@ -255,14 +260,156 @@
 
         .app-grid {
             width: 100%;
-            padding: 20px 40px;
+            padding: 15px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 15px;
             justify-content: center;
-            align-content: center;
-            margin-top: 70px;
+            align-content: flex-start;
+            margin-top: 20px;
+            height: calc(100% - 280px); /* Adjust height to fit better */
         }
+        .app-grid-widget-container {
+            grid-column: span 2;
+            grid-row: span 2;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .app-grid-widget {
+            width: 85%;
+            height: 85%;
+            background-color: transparent;
+            border-radius: 30px;
+            padding: 0; /* Remove padding */
+            box-sizing: border-box;
+            border: none; /* Remove border */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0; /* Remove gap */
+            transition: transform 0.2s ease;
+        }
+        .app-grid-widget:hover {
+            transform: none; /* Remove hover effect */
+        }
+        .app-grid-placeholder-widget {
+            grid-column: 3 / 5;
+            grid-row: 3 / 5;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 18px;
+            border: 2px dashed rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: rgba(0,0,0,0.4);
+        }
+        .heart-photo-widget {
+            grid-column: 3 / 5;
+            grid-row: 3 / 5;
+            width: 60%;
+            height: auto;
+            aspect-ratio: 83 / 95;
+            justify-self: center;
+            align-self: center;
+            background-color: #F0F2F0; /* Polaroid paper color */
+            padding: 12px 12px 35px 12px; /* Padding for frame */
+            box-shadow: 0 5px 12px rgba(0,0,0,0.15); /* Shadow for lifting effect */
+            border: 1px solid #DCDCDC; /* Hard edge */
+            border-bottom-color: #B0B0B0;
+            border-right-color: #B0B0B0;
+            border-radius: 4px; /* Softer corners */
+            transform: rotate(4deg);
+            position: relative;
+            background-image: none;
+            clip-path: none;
+            filter: none;
+            cursor: pointer; /* Add cursor pointer */
+            transition: transform 0.2s ease-in-out; /* Add transition */
+        }
+        .heart-photo-widget:hover {
+            transform: rotate(2deg) scale(1.05); /* Add hover effect */
+        }
+        .heart-photo-widget::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 35px; /* Adjust to match padding */
+            background-image: url('https://i.postimg.cc/XvFDdTKY/Smart-Select-20251013-023208.jpg');
+            background-size: cover;
+            background-position: center;
+            /* Inner shadow for recessed look and bottom line */
+            box-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid #C5C2BE;
+        }
+        .widget-top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8px;
+            color: rgba(0, 0, 0, 0.4);
+        }
+        .widget-status-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .widget-icons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .widget-icons svg {
+            width: 18px;
+            height: 18px;
+            fill: rgba(0, 0, 0, 0.4);
+        }
+        .widget-main-image-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .widget-main-image {
+            width: 85%;
+            padding-bottom: 85%; /* Creates a square aspect ratio */
+            background-size: cover;
+            background-position: center;
+            border-radius: 18px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .widget-speech-bubble {
+            position: absolute;
+            top: 10px;
+            right: 0px;
+            background-color: #fff;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #555;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .widget-paw-button {
+            background-color: #fff;
+            border-radius: 20px;
+            padding: 6px 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .widget-paw-button img {
+            height: 20px;
+            width: auto;
+        }
+
 
         #peek-screen .time-widget,
         #peek-screen .time-widget .date,
@@ -317,10 +464,10 @@
         }
 
         .icon-img {
-            width: 60px;
-            height: 60px;
+            width: 54px;
+            height: 54px;
             border-radius: 15px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s ease;
             object-fit: cover;
@@ -691,41 +838,6 @@
             padding: 4px 10px;
             border-radius: 10px;
             text-align: center;
-        }
-
-        /* --- 导演指令气泡新样式 --- */
-        .director-command-bubble {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            margin: 5px 0;
-        }
-
-        .director-command-timestamp {
-            background-color: #e0e0e0;
-            color: #757575;
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .director-command-timestamp:hover {
-            background-color: #d1d1d1;
-        }
-
-        .director-command-content {
-            background-color: #f5f5f5;
-            color: #555;
-            font-size: 14px;
-            padding: 8px 12px;
-            border-radius: 10px;
-            margin-top: 5px;
-            max-width: 80%;
-            text-align: left;
-            line-height: 1.5;
         }
 
         /* --- 新增：撤回消息样式 --- */
@@ -1724,7 +1836,8 @@
 
         #world-book-selection-modal,
         #invite-member-modal,
-        #group-recipient-selection-modal {
+        #group-recipient-selection-modal,
+        #global-pomodoro-world-book-selection-modal {
             z-index: 102;
         }
 
@@ -1973,7 +2086,7 @@
 /* 这是旁边4个小椭圆的通用样式 (美化版) */
 .satellite-oval {
     position: absolute;
-    width: 135px; /* 宽度 */
+    width: 120px; /* 宽度 */
     height: 45px; /* 高度 */
     background-color: rgba(255, 255, 255, 0.2); /* 背景 */
     backdrop-filter: blur(8px);
@@ -1996,21 +2109,33 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.satellite-oval img {
-    width: 32px; /* 图片也稍微大一点 */
-    height: 32px;
+.satellite-emoji {
+    font-size: 16px;
+    width: 25px;
+    height: 25px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    cursor: text;
     border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 0; /* 去掉之前的下边距 */
-    flex-shrink: 0; /* 防止图片被文字挤压变形 */
+    transition: background-color 0.2s;
 }
 
-/* 新增对文字的样式控制 */
-.satellite-oval span {
-    flex-grow: 1; /* 让文字占据所有剩余空间 */
-    text-align: left; /* 文字左对齐 */
-    line-height: 1.4; /* 调整行高，让多行文字更好看 */
-    white-space: normal; /* 允许文字换行 */
+.satellite-text {
+    flex-grow: 1;
+    text-align: left;
+    line-height: 1.4;
+    white-space: normal;
+    cursor: text;
+    transition: background-color 0.2s;
+    border-radius: 5px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+}
+
+[contenteditable]:focus {
+    outline: 2px solid var(--accent-color);
+    background-color: rgba(144, 202, 249, 0.2);
 }
 
 /* 分别定义4个小椭圆的位置 (调整了位置以适应新宽度) */
@@ -3752,54 +3877,6 @@ border-top: none;
     padding: 5px; /* 调整内边距以适应新尺寸 */
 }
 
-/* --- 导演模式指示器样式 --- */
-#director-mode-indicator {
-    display: none; /* 默认隐藏 */
-    position: absolute;
-    right: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-right: 6px;
-    width: 24px;
-    height: 24px;
-    opacity: 0.7;
-}
-
-.director-mode-active #director-mode-indicator {
-    display: block; /* 导演模式激活时显示 */
-}
-
-#director-mode-indicator svg {
-    width: 100%;
-    height: 100%;
-    stroke: var(--primary-color);
-    stroke-width: 2;
-    fill: none;
-    animation: heartbeat 1.5s ease-in-out infinite;
-}
-
-@keyframes heartbeat {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 1; }
-}
-
-/* --- 导演模式功能栏 --- */
-#director-mode-sticker-bar {
-    display: none; /* 默认隐藏 */
-    align-items: center;
-    padding: 0 10px 5px;
-    gap: 8px;
-    overflow-x: auto;
-}
-
-.director-mode-active #sticker-bar {
-    display: none !important; /* 导演模式时隐藏普通功能栏 */
-}
-
-.director-mode-active #director-mode-sticker-bar {
-    display: flex !important; /* 导演模式时显示导演功能栏 */
-}
-
 #chat-room-header-default .action-btn-group .action-btn img {
     width: 24px;  /* 缩小图标宽度 */
     height: 24px; /* 缩小图标高度 */
@@ -3930,9 +4007,573 @@ border-top: none;
             text-overflow: ellipsis;
         }
     </style>
+    <style>
+        /* --- Pomodoro (番茄钟) Styles --- */
+        #pomodoro-screen {
+            background: var(--white-color); /* Match other app screens */
+            color: #333;
+            flex-direction: column;
+        }
+
+
+        #pomodoro-screen .content {
+            padding: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .task-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .task-card {
+            background: var(--white-color); /* 使用白色背景以突出卡片 */
+            border: 1px solid #f5f5f5; /* 添加一个非常浅的边框 */
+            border-radius: 12px; /* 恢复圆角，使其看起来像卡片 */
+            padding: 18px; /* 统一内边距 */
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04); /* 添加微妙的阴影以营造悬浮感 */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px); /* 悬停时轻微上浮 */
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); /* 悬停时阴影加深 */
+        }
+
+        .task-card-info {
+            flex-grow: 1;
+        }
+
+        .task-card-title {
+            font-size: 16px; /* 标题字号稍小 */
+            font-weight: 500; /* 字体变细 */
+            margin: 0 0 8px 0; /* 增加与详情的间距 */
+            color: #333;
+        }
+
+        .task-card-details {
+            font-size: 14px; /* 详情字号稍大 */
+            color: #888; /* 颜色变浅 */
+        }
+
+        .task-card-start-btn {
+            background-color: transparent; /* 透明背景 */
+            color: var(--primary-color); /* 主题色文字 */
+            border: 1px solid var(--primary-color); /* 主题色描边 */
+            border-radius: 20px; /* 更圆润的按钮 */
+            padding: 8px 18px; /* 调整按钮大小 */
+            font-weight: 500; /* 字体稍细 */
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 15px;
+            transition: all 0.2s ease; /* 平滑过渡 */
+        }
+
+        .task-card-start-btn:hover {
+            background-color: var(--primary-color); /* 悬停时填充背景 */
+            color: white; /* 文字变白 */
+        }
+
+        /* Create Task Modal Styles */
+        #pomodoro-create-modal .modal-window {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #pomodoro-create-modal .form-group {
+            margin-bottom: 18px;
+        }
+
+        #pomodoro-create-modal .radio-group-pills {
+            display: flex;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #pomodoro-create-modal .radio-group-pills label {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            background-color: transparent;
+            color: #555;
+            transition: background-color 0.2s, color 0.2s;
+            font-weight: 500;
+        }
+
+        #pomodoro-create-modal .radio-group-pills input[type="radio"] {
+            display: none;
+        }
+
+        #pomodoro-create-modal .radio-group-pills input[type="radio"]:checked + label {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 128, 171, 0.4);
+        }
+
+        #pomodoro-duration-options {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, margin-top 0.4s ease-in-out;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        #pomodoro-duration-options.visible {
+            max-height: 200px; /* A large enough value */
+            margin-top: 15px;
+        }
+
+        #pomodoro-duration-options .duration-pill {
+            flex-grow: 1;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        #pomodoro-duration-options .duration-pill.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        #pomodoro-custom-duration-input {
+            width: 100%;
+            margin-top: 10px;
+            display: none; /* Initially hidden */
+        }
+        /* --- Pomodoro Focus Screen Styles --- */
+        #pomodoro-focus-screen {
+            background: var(--white-color);
+            color: var(--text-color);
+            flex-direction: column;
+        }
+
+        #pomodoro-focus-screen .app-header {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #eee;
+        }
+
+        #pomodoro-focus-screen .app-header .back-btn,
+        #pomodoro-focus-screen .app-header .title {
+            color: var(--text-color);
+            text-shadow: none;
+        }
+
+        #pomodoro-focus-screen .content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Push timer up and controls down */
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .focus-timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1; /* Take up available space */
+            text-align: center;
+        }
+
+        .focus-task-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: #555;
+            margin: 0 0 25px 0;
+        }
+
+        .focus-timer-display {
+            font-size: 80px;
+            font-weight: 700;
+            line-height: 1;
+            color: #333;
+        }
+
+        .focus-timer-mode {
+            font-size: 16px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .focus-total-time {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 15px;
+        }
+
+        .focus-bottom-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 320px; /* Limit width for better spacing */
+            padding: 20px 0 calc(20px + env(safe-area-inset-bottom));
+            flex-shrink: 0;
+        }
+        
+        .focus-controls-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .focus-bottom-controls .control-btn {
+            background: transparent;
+            border: none;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        .focus-bottom-controls .control-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .focus-bottom-controls .control-btn svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .focus-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .focus-footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .focus-message-bubble {
+            background-color: #f0f0f0;
+            border-radius: 12px;
+            padding: 15px 20px;
+            width: 90%;
+            max-width: 340px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+            color: #333;
+            font-size: 15px;
+            /* --- 新增：动画样式 --- */
+            opacity: 0;
+            transform: translateY(15px) scale(0.95);
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* 一个有弹性的过渡效果 */
+            pointer-events: none; /* 隐藏时不可交互 */
+        }
+
+        .focus-message-bubble.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            visibility: visible;
+            pointer-events: auto; /* 显示时可交互 */
+        }
+
+        .focus-message-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #f0f0f0;
+        }
+        /* --- NEW: Swipe to delete styles for task cards (Corrected) --- */
+        .task-card-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px; /* Match task-card border-radius */
+        }
+
+        .task-card {
+            transition: transform 0.3s ease-in-out;
+            will-change: transform;
+            background-color: var(--white-color); /* Ensure it has a background */
+            z-index: 2; /* Keep card above delete button */
+            position: relative; /* Establishes stacking context */
+        }
+
+        .task-card-delete-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 100%;
+            background-color: #ef5350; /* Danger color */
+            color: white;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1; /* Positioned behind the card */
+        }
+
+        .task-card-wrapper.is-swiped .task-card {
+            transform: translateX(-80px);
+        }
+
+        /* --- Pomodoro Settings Sidebar Styles --- */
+        #pomodoro-settings-sidebar {
+            background: rgba(245, 245, 245, 0.9);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        #pomodoro-settings-sidebar .header {
+            color: #333;
+            font-weight: 600;
+            border-bottom-color: rgba(0,0,0,0.08);
+        }
+
+        #pomodoro-settings-sidebar .form-group label {
+            color: #555;
+            font-weight: 500;
+        }
+
+        #pomodoro-settings-sidebar .form-group input,
+        #pomodoro-settings-sidebar .form-group select {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 15px;
+        }
+
+        #pomodoro-settings-sidebar .form-group input:focus,
+        #pomodoro-settings-sidebar .form-group select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255, 128, 171, 0.2);
+        }
+
+        #pomodoro-settings-sidebar hr {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 25px 0;
+        }
+
+        /* --- Pomodoro Certificate Styles --- */
+        #pomodoro-certificate-modal .modal-window {
+            background: linear-gradient(135deg, #fff8f9, #fff0f3);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 8px 25px rgba(255, 128, 171, 0.2);
+        }
+
+        #pomodoro-certificate-modal h3 {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 24px;
+            color: var(--primary-color);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        #pomodoro-certificate-content {
+            border-color: rgba(255, 128, 171, 0.5);
+            text-align: left;
+            padding: 20px 25px;
+        }
+
+        #pomodoro-certificate-content p {
+            font-size: 16px;
+            color: #555;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        #pomodoro-certificate-content p strong {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        /* --- Pomodoro Record Card in Chat --- */
+        .pomodoro-record-card {
+            width: 240px;
+            background: linear-gradient(135deg, #f5f7fa, #e9ecf2);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            cursor: pointer;
+            border: 1px solid #e0e5ec;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            margin: 0 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .pomodoro-record-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .pomodoro-record-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dce3ed;
+            margin-bottom: 10px;
+        }
+
+        .pomodoro-record-header svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--accent-color);
+            flex-shrink: 0;
+        }
+
+        .pomodoro-record-header .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .pomodoro-record-body .task-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #555;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        /* --- New INS-Style Widget --- */
+        .ins-widget {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            padding: 15px; /* Add some padding */
+            gap: 10px;
+            box-sizing: border-box;
+        }
+
+        .ins-widget-row {
+            display: flex;
+            width: 100%;
+            align-items: center;
+        }
+
+        .ins-widget-row.user {
+            justify-content: flex-start;
+        }
+
+        .ins-widget-row.character {
+            justify-content: flex-end;
+        }
+
+        .ins-widget-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 2px solid white; /* 头像边框 */
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* 头像阴影 */
+        }
+
+        .ins-widget-bubble {
+            position: relative;
+            background-color: #fff;
+            border-radius: 15px;
+            padding: 8px 12px;
+            font-size: 12px; /* 气泡字体大小 */
+            color: #333;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+            max-width: 70%;
+        }
+
+        .ins-widget-row.user .ins-widget-bubble {
+            margin-left: 12px;
+        }
+
+        .ins-widget-row.character .ins-widget-bubble {
+            margin-right: 12px;
+        }
+
+        /* Bubble tail */
+        .ins-widget-bubble::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        /* User bubble tail (left) */
+        .ins-widget-row.user .ins-widget-bubble::after {
+            top: 50%;
+            left: -5.5px; /* 尾巴位置 */
+            margin-top: -4px; /* 尾巴位置 */
+            border-width: 4px 6px 4px 0; /* 尾巴大小 */
+            border-color: transparent #fff transparent transparent;
+        }
+
+        /* Character bubble tail (right) */
+        .ins-widget-row.character .ins-widget-bubble::after {
+            top: 50%;
+            right: -5.5px; /* 尾巴位置 */
+            margin-top: -6px; /* 尾巴位置 */
+            border-width: 6px 0 6px 8px; /* 尾巴大小 */
+            border-color: transparent transparent transparent #fff;
+        }
+
+        .ins-widget-divider {
+            width: 90%;
+            text-align: center;
+            border-bottom: 1.5px dashed #d3d3d3;
+            line-height: 0.1em;
+            margin: 12px 0;
+        }
+
+        .ins-widget-divider span {
+            background: transparent;
+            padding: 0 10px;
+            color: #b0b0b0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 
 <body>
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <clipPath id="heart-clip" clipPathUnits="objectBoundingBox">
+      <path d="M0.5,1 C0.1,0.8,0,0.45,0.5,0.2 C1,0.45,0.9,0.8,0.5,1 Z" />
+    </clipPath>
+  </defs>
+</svg>
 <div class="phone-screen">
     <div id="home-screen" class="screen active"></div>
     <div id="chat-list-screen" class="screen">
@@ -3967,12 +4608,6 @@ border-top: none;
                 <div class="subtitle" id="chat-room-subtitle">
                     <div class="online-indicator"></div>
                     <span id="chat-room-status-text">在线</span>
-                </div>
-                <!-- 新增：导演模式心电图指示器 -->
-                <div id="director-mode-indicator">
-                    <svg viewBox="0 0 24 24">
-                        <polyline points="0 12 4 12 6 8 10 16 14 4 18 12 20 12"></polyline>
-                    </svg>
                 </div>
             </div>
             <div class="action-btn-group">
@@ -4041,15 +4676,6 @@ border-top: none;
                     <svg viewBox="0 0 24 24">
                         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                     </svg>
-                </button>
-            </div>
-            <!-- 新增：导演模式功能栏 -->
-            <div id="director-mode-sticker-bar">
-                <button class="sticker-bar-btn" id="exit-director-mode-btn" title="退出导演模式">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"></path></svg>
-                </button>
-                 <button class="sticker-bar-btn" id="director-continue-plot-btn" title="继续剧情">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8,5.14V19.14L19,12.14L8,5.14Z"></path></svg>
                 </button>
             </div>
             <div id="reply-preview-bar">
@@ -4383,6 +5009,16 @@ border-top: none;
             <button class="btn btn-primary" id="save-world-book-selection-btn" style="margin-top: 20px;">确认</button>
         </div>
     </div>
+    <!-- Global Pomodoro World Book Selection Modal -->
+    <div id="global-pomodoro-world-book-selection-modal" class="modal-overlay">
+        <div class="modal-window">
+            <h3>为全局专注设置关联世界书</h3>
+            <ul id="global-pomodoro-world-book-selection-list" class="list-container" style="max-height: 40vh; overflow-y: auto; padding: 0; margin: 15px 0;">
+                <!-- World book items will be rendered here -->
+            </ul>
+            <button class="btn btn-primary" id="save-global-pomodoro-world-book-selection-btn" style="margin-top: 20px;">确认</button>
+        </div>
+    </div>
     <!-- Group Chat Creation Modal -->
     <div id="create-group-modal" class="modal-overlay">
         <div class="modal-window">
@@ -4691,6 +5327,10 @@ border-top: none;
     </header>
     <main class="content" style="flex-direction: column; justify-content: flex-start; padding: 20px; gap: 20px;">
         <div id="storage-chart-container" style="width: 100%; height: 300px; flex-shrink: 0;"></div>
+        <div id="storage-total-size-container" style="text-align: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; margin-bottom: 10px;">
+            <span style="font-size: 14px; color: #888;">总占用空间</span>
+            <h2 id="storage-total-size" style="margin: 4px 0 0 0; font-size: 24px; color: #333; font-weight: 600;">---</h2>
+        </div>
         <div id="storage-details-list" style="width: 100%; overflow-y: auto;"></div>
     </main>
 </div>
@@ -4822,6 +5462,188 @@ border-top: none;
             <button id="save-peek-settings-btn" class="btn btn-primary" style="margin-top: 20px;">保存所有更改</button>
         </div>
     </div>
+<div id="pomodoro-screen" class="screen">
+    <header class="app-header">
+        <button class="back-btn" data-target="home-screen">‹</button>
+        <div class="title-container">
+            <h1 class="title">专注任务</h1>
+        </div>
+        <div class="action-btn-group">
+            <button class="action-btn" id="pomodoro-settings-btn" title="设置">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.2,5.77C8.61,6.01,8.08,6.33,7.58,6.71L5.19,5.75C4.97,5.68,4.72,5.75,4.6,5.97L2.68,9.29 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.78,11.66,4.76,11.97,4.76,12.3c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.36-2.54c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+            </button>
+            <button class="action-btn" id="pomodoro-create-task-btn" title="创建任务">+</button>
+        </div>
+    </header>
+    <main class="content">
+        <div class="task-list-container" id="pomodoro-task-list">
+            <!-- Task cards will be rendered here by JS -->
+        </div>
+        <p class="placeholder-text" id="pomodoro-no-tasks-placeholder">还没有专注任务，点击右上角“+”创建一个吧。</p>
+    </main>
+</div>
+<!-- Pomodoro Focus Screen -->
+<div id="pomodoro-focus-screen" class="screen">
+    <header class="app-header">
+        <button class="back-btn" data-target="pomodoro-screen">‹</button>
+        <div class="title-container">
+            <h1 class="title">专注中</h1>
+        </div>
+        <div class="action-btn-group">
+            <button class="action-btn" id="pomodoro-focus-settings-btn" title="设置">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.2,5.77C8.61,6.01,8.08,6.33,7.58,6.71L5.19,5.75C4.97,5.68,4.72,5.75,4.6,5.97L2.68,9.29 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.78,11.66,4.76,11.97,4.76,12.3c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.36-2.54c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+            </button>
+        </div>
+    </header>
+    <main class="content">
+        <div class="focus-timer-container">
+            <h2 class="focus-task-title">阅读一章《JavaScript高级程序设计》</h2>
+            <div class="focus-timer-display">24:32</div>
+            <div class="focus-timer-mode">倒计时</div>
+            <div class="focus-total-time" id="pomodoro-total-focused-time">已专注 0 分钟</div>
+        </div>
+
+        <div class="focus-footer">
+            <div class="focus-message-bubble">
+                <p>保持专注，你做得很好！</p>
+            </div>
+            <div class="focus-bottom-controls">
+                <div class="focus-controls-group">
+                    <button class="control-btn" id="pomodoro-start-btn" title="开始">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    </button>
+                    <button class="control-btn" id="pomodoro-pause-btn" title="暂停" style="display: none;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    </button>
+                </div>
+                <img src="https://i.postimg.cc/Y96LPskq/o-o-2.jpg" class="focus-avatar" alt="avatar">
+                <button class="control-btn" id="pomodoro-giveup-btn" title="放弃">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Pomodoro Settings Sidebar -->
+<div id="pomodoro-settings-sidebar" class="settings-sidebar">
+    <div class="header">专注设置</div>
+    <div class="content">
+        <form id="pomodoro-settings-form">
+            <div class="form-group">
+                <label for="pomodoro-char-select">绑定陪伴角色</label>
+                <select id="pomodoro-char-select" class="form-group"></select>
+            </div>
+            <div class="form-group">
+                <label for="pomodoro-user-persona-select">选择你的设定</label>
+                <select id="pomodoro-user-persona-select" class="form-group"></select>
+            </div>
+            <hr>
+            <div class="form-group">
+                <label for="pomodoro-encouragement-minutes">鼓励机制 (分钟)</label>
+                <input type="number" id="pomodoro-encouragement-minutes" class="form-group" placeholder="专注多少分钟后收到鼓励" min="1">
+            </div>
+            <div class="form-group">
+                <label for="pomodoro-poke-limit">“戳一戳”次数上限</label>
+                <input type="number" id="pomodoro-poke-limit" class="form-group" placeholder="每次专注允许戳几次" min="0">
+            </div>
+            <hr>
+            <div class="form-group">
+                <label for="pomodoro-focus-bg-url">专注界面背景 URL</label>
+                <input type="url" id="pomodoro-focus-bg-url" class="form-group" placeholder="粘贴图片URL">
+            </div>
+            <div class="form-group">
+                <label for="pomodoro-focus-bg-upload" class="btn btn-secondary">或从本地上传</label>
+                <input type="file" id="pomodoro-focus-bg-upload" accept="image/*" style="display:none;">
+            </div>
+            <hr>
+            <div class="form-group">
+                <label for="pomodoro-task-card-bg-url">任务卡片背景 URL</label>
+                <input type="url" id="pomodoro-task-card-bg-url" class="form-group" placeholder="粘贴图片URL">
+            </div>
+            <div class="form-group">
+                <label for="pomodoro-task-card-bg-upload" class="btn btn-secondary">或从本地上传</label>
+                <input type="file" id="pomodoro-task-card-bg-upload" accept="image/*" style="display:none;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">保存设置</button>
+        </form>
+    </div>
+</div>
+
+<!-- Pomodoro Global Settings Sidebar -->
+<div id="pomodoro-global-settings-sidebar" class="settings-sidebar">
+    <div class="header">全局专注设置</div>
+    <div class="content">
+        <form id="pomodoro-global-settings-form">
+            <div class="form-group">
+                <button type="button" class="btn btn-secondary" id="link-global-pomodoro-world-book-btn">关联世界书</button>
+            </div>
+            <p style="font-size: 12px; color: #888; margin-top: 15px;">
+                这里关联的世界书将作为全局上下文，作用于所有番茄钟任务的AI互动。
+            </p>
+        </form>
+    </div>
+</div>
+
+<!-- Pomodoro Certificate Modal -->
+<div id="pomodoro-certificate-modal" class="modal-overlay">
+    <div class="modal-window" style="text-align: center;">
+        <h3>专注完成！</h3>
+        <div id="pomodoro-certificate-content" style="border: 2px dashed var(--primary-color); padding: 20px; margin: 15px 0; border-radius: 10px; background: #fff8fa;">
+            <p><strong>任务名称:</strong> <span id="cert-task-name"></span></p>
+            <p><strong>专注时长:</strong> <span id="cert-duration"></span></p>
+            <p><strong>“戳一戳”次数:</strong> <span id="cert-poke-count"></span></p>
+        </div>
+        <p>做的很棒！要不要把这次的专注成果分享一下？</p>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="forward-certificate-btn" class="btn btn-primary" style="flex: 1;">转发到聊天框</button>
+            <button id="close-certificate-btn" class="btn btn-neutral" style="flex: 1;">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- Pomodoro Record Detail Modal -->
+<div id="pomodoro-record-detail-modal" class="modal-overlay">
+    <div class="modal-window" style="text-align: center;">
+        <h3>专注记录详情</h3>
+        <div id="pomodoro-record-detail-content" style="border: 2px dashed var(--accent-color); padding: 20px; margin: 15px 0; border-radius: 10px; background: #f5f7fa;">
+            <p><strong>任务名称:</strong> <span id="detail-task-name"></span></p>
+            <p><strong>专注时长:</strong> <span id="detail-duration"></span></p>
+            <p><strong>“戳一戳”次数:</strong> <span id="detail-poke-count"></span></p>
+        </div>
+        <button id="close-record-detail-btn" class="btn btn-primary" style="width: 100%;">关闭</button>
+    </div>
+</div>
+
+<!-- Pomodoro Create Task Modal -->
+<div id="pomodoro-create-modal" class="modal-overlay">
+    <div class="modal-window">
+        <h3>创建专注任务</h3>
+        <form id="pomodoro-create-form">
+            <div class="form-group">
+                <label for="pomodoro-task-name">任务名称</label>
+                <input type="text" id="pomodoro-task-name" class="form-group" placeholder="例如：阅读一章《JavaScript高级程序设计》" required>
+            </div>
+            <div class="form-group">
+                <label>计时模式</label>
+                <div class="radio-group-pills">
+                    <input type="radio" id="mode-countdown" name="pomodoro-mode" value="countdown" checked>
+                    <label for="mode-countdown">倒计时</label>
+                    <input type="radio" id="mode-stopwatch" name="pomodoro-mode" value="stopwatch">
+                    <label for="mode-stopwatch">正计时</label>
+                </div>
+            </div>
+            <div id="pomodoro-duration-options" class="visible">
+                <button type="button" class="duration-pill active" data-duration="30">30分钟</button>
+                <button type="button" class="duration-pill" data-duration="45">45分钟</button>
+                <button type="button" class="duration-pill" data-duration="60">60分钟</button>
+                <button type="button" class="duration-pill" data-duration="custom">自定义</button>
+                <input type="number" id="pomodoro-custom-duration-input" class="form-group" placeholder="输入分钟数">
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">创建任务</button>
+        </form>
+    </div>
+</div>
     <div id="peek-photo-modal" class="modal-overlay">
         <div class="modal-window">
             <div id="peek-photo-image-container">
@@ -4832,6 +5654,25 @@ border-top: none;
     </div>
 </div>
  
+<!-- Polaroid Customization Modal -->
+<div id="heart-photo-modal" class="modal-overlay">
+    <div class="modal-window">
+        <h3>自定义拍立得</h3>
+        <form id="heart-photo-form">
+            <div id="heart-photo-preview" style="width: 150px; height: 150px; border: 2px dashed #ddd; border-radius: 10px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; color: #aaa; background-color: #f9f9f9; background-size: cover; background-position: center;">
+                <span>预览</span>
+            </div>
+            <div class="form-group">
+                <label for="heart-photo-url-input">图片URL</label>
+                <input type="url" id="heart-photo-url-input" class="form-group" placeholder="粘贴图片URL">
+            </div>
+            <p style="text-align:center; color:#888; margin: -10px 0 15px;">或</p>
+            <input type="file" id="heart-photo-file-upload" accept="image/*" style="display:none;">
+            <label for="heart-photo-file-upload" class="btn btn-secondary" style="width:100%; margin-bottom: 20px;">从本地上传</label>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </form>
+    </div>
+</div>
     <div id="forum-binding-modal" class="modal-overlay">
         <div class="modal-window">
             <h3>绑定上下文</h3>
@@ -4939,7 +5780,28 @@ border-top: none;
 <div id="mypersona-presets-modal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);justify-content:center;align-items:center;z-index:9999;"><div class="modal-window" style="max-width:520px;background:var(--panel-bg,#fff);padding:14px;border-radius:10px;box-shadow:0 12px 36px rgba(10,10,20,0.12);"><h3 style="margin:0 0 10px 0;font-size:16px;">管理我的人设预设</h3><div id="mypersona-presets-list" style="max-height:340px; overflow:auto; margin-bottom:12px;"></div><div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="mypersona-close-modal" class="btn btn-primary" style="padding:8px 12px;border-radius:8px;">关闭</button></div></div></div>
 <div id="global-css-presets-modal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);justify-content:center;align-items:center;z-index:9999;"><div class="modal-window" style="max-width:520px;background:var(--panel-bg,#fff);padding:14px;border-radius:10px;box-shadow:0 12px 36px rgba(10,10,20,0.12);"><h3 style="margin:0 0 10px 0;font-size:16px;">管理全局CSS预设</h3><div id="global-css-presets-list" style="max-height:340px; overflow:auto; margin-bottom:12px;"></div><div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" id="global-css-close-modal" class="btn btn-primary" style="padding:8px 12px;border-radius:8px;">关闭</button></div></div></div>
 <input type="file" id="import-data-input" accept=".ee" style="display: none;">
+<div id="storage-screen" class="screen"></div>
 <input type="file" id="character-card-input" accept="image/png,application/json" style="display: none;">
+<!-- INS Widget Avatar Modal -->
+<div id="ins-widget-avatar-modal" class="modal-overlay">
+    <div class="modal-window">
+        <h3>更换头像</h3>
+        <form id="ins-widget-avatar-form">
+            <input type="hidden" id="ins-widget-avatar-target">
+            <div id="ins-widget-avatar-preview" style="width: 100px; height: 100px; border: 2px dashed #ddd; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; color: #aaa; background-color: #f9f9f9; background-size: cover; background-position: center;">
+                <span>预览</span>
+            </div>
+            <div class="form-group">
+                <label for="ins-widget-avatar-url-input">头像URL</label>
+                <input type="url" id="ins-widget-avatar-url-input" class="form-group" placeholder="粘贴图片URL">
+            </div>
+            <p style="text-align:center; color:#888; margin: -10px 0 15px;">或</p>
+            <input type="file" id="ins-widget-avatar-file-upload" accept="image/*" style="display:none;">
+            <label for="ins-widget-avatar-file-upload" class="btn btn-secondary" style="width:100%; margin-bottom: 20px;">从本地上传</label>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </form>
+    </div>
+</div>
 
 <script>
     async function updateBatteryStatus() {
@@ -5146,10 +6008,10 @@ border-top: none;
         };
         const defaultWidgetSettings = {
             centralCircleImage: 'https://i.postimg.cc/mD83gR29/avatar-1.jpg',
-            topLeft: { imageUrl: 'https://i.postimg.cc/B6q5Q6cY/chan-23.png', text: '心情' },
-            topRight: { imageUrl: 'https://i.postimg.cc/tJ7x7kNg/chan-40.png', text: '天气' },
-            bottomLeft: { imageUrl: 'https://i.postimg.cc/3J8R8PMb/chan-101.png', text: '音乐' },
-            bottomRight: { imageUrl: 'https://i.postimg.cc/QdpgTfV9/chan-112.png', text: '待办' }
+            topLeft: { emoji: '🎧', text: '𝑀𝑒𝑚𝑜𝑟𝑖𝑒𝑠✞' },
+            topRight: { emoji: '🐈‍⬛', text: '𐙚 ♰.𝐾𝑖𝑡𝑡𝑒𝑛.♰' },
+            bottomLeft: { emoji: '💿', text: '᪗₊𝔹𝕒𝕓𝕖𝕚𝕤₊' },
+            bottomRight: { emoji: '🥛', text: '.☘︎ ˖+×+.' }
         };
                const defaultIcons = {
             'chat-list-screen': {name: '404', url: 'https://i.postimg.cc/VvQB8dQT/chan-143.png'},
@@ -5162,10 +6024,11 @@ border-top: none;
             'day-mode-btn': {name: '白昼模式', url: 'https://i.postimg.cc/Jz0tYqnT/chan-145.png'},
             'night-mode-btn': {name: '夜间模式', url: 'https://i.postimg.cc/htYvkdQK/chan-146.png'},
             'forum-screen': {name: '论坛', url: 'https://i.postimg.cc/fyPVBZf1/1758451183605.png'},
-'music-screen': {name: '音乐', url: 'https://i.postimg.cc/ydd65txK/1758451018266.png'},
-'diary-screen': {name: '日记本', url: 'https://i.postimg.cc/bJBLzmFH/chan-70.png'},
-'piggy-bank-screen': {name: '存钱罐', url: 'https://i.postimg.cc/3RmWRRtS/chan-18.png'},
-'storage-analysis-screen': {name: '存储分析', url: 'https://i.postimg.cc/J0F3Lt0T/chan-107.png'}
+            'music-screen': {name: '音乐', url: 'https://i.postimg.cc/ydd65txK/1758451018266.png'},
+            'diary-screen': {name: '日记本', url: 'https://i.postimg.cc/bJBLzmFH/chan-70.png'},
+            'piggy-bank-screen': {name: '存钱罐', url: 'https://i.postimg.cc/3RmWRRtS/chan-18.png'},
+            'pomodoro-screen': {name: '番茄钟', url: 'https://i.postimg.cc/PrYGRDPF/chan-76.png'},
+            'storage-analysis-screen': {name: '存储分析', url: 'https://i.postimg.cc/J0F3Lt0T/chan-107.png'}
         };
 
 
@@ -5183,6 +6046,11 @@ border-top: none;
 
         const simulatedMemos = [];
 
+        const globalSettingKeys = [
+            'apiSettings', 'wallpaper', 'homeScreenMode', 'fontUrl', 'customIcons',
+            'apiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
+            'globalCssPresets', 'homeSignature', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
+        ];
         let db = {
             characters: [],
             groups: [],
@@ -5200,10 +6068,26 @@ border-top: none;
             globalCss: '',
             globalCssPresets: [],
             homeSignature: '编辑个性签名...',
-            forumBindings: { 
+            forumBindings: {
                 worldBookIds: [],
                 charIds: [],
                 userPersonaIds: []
+            },
+            pomodoroTasks: [],
+            pomodoroSettings: {
+                boundCharId: null,
+                userPersona: '',
+                focusBackground: '',
+                taskCardBackground: '',
+                encouragementMinutes: 25,
+                pokeLimit: 5,
+                globalWorldBookIds: [] // NEW: For global settings
+            },
+            insWidgetSettings: {
+                avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg',
+                bubble1: 'love u.',
+                avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg',
+                bubble2: 'miss u.'
             },
         };
         let currentChatId = null, currentChatType = null, isGenerating = false, longPressTimer = null,
@@ -5212,6 +6096,7 @@ border-top: none;
             currentJournalDetailId = null,
             currentQuoteInfo = null, // 新增：用于存储引用信息
             currentGroupAction = {type: null, recipients: []};
+        let currentPomodoroTask = null, pomodoroInterval = null, pomodoroRemainingSeconds = 0, pomodoroCurrentSessionSeconds = 0, isPomodoroPaused = true, pomodoroPokeCount = 0, pomodoroIsInterrupted = false, currentPomodoroSettingsContext = null, pomodoroSessionHistory = [];
         let isStickerManageMode = false;
         let selectedStickerIds = new Set();
         let peekContentCache = {};
@@ -5335,6 +6220,7 @@ border-top: none;
             groupRecipientSelectionTitle = document.getElementById('group-recipient-selection-title');
         const linkGroupWorldBookBtn = document.getElementById('link-group-world-book-btn');
 
+        // --- Dexie DB Setup ---
         // --- 优化的数据存储系统 ---
         class OptimizedDataStorage {
             constructor() {
@@ -6098,7 +6984,7 @@ ${historyContext}
             const dbData = data ? data : db;
 
             // 分离消息数据和基础数据
-            const { characters, groups, ...baseData } = dbData;
+            const { characters, groups, pomodoroTasks, pomodoroSettings, homeWidgetSettings, ...baseData } = dbData;
 
             // 保存基础数据
             await dataStorage.saveData('章鱼喷墨机', baseData);
@@ -6167,10 +7053,20 @@ ${historyContext}
     await dataStorage.saveData('forumPosts', dbData.forumPosts);
 }
 
-return Promise.resolve();
-            
             if(dbData.wallpaper){
                 await dataStorage.saveData('wallpaper', dbData.wallpaper);
+            }
+            if(dbData.pomodoroTasks){
+                await dataStorage.saveData('pomodoroTasks', dbData.pomodoroTasks);
+            }
+            if(dbData.pomodoroSettings){
+                await dataStorage.saveData('pomodoroSettings', dbData.pomodoroSettings);
+            }
+            if(dbData.insWidgetSettings){
+                await dataStorage.saveData('insWidgetSettings', dbData.insWidgetSettings);
+            }
+            if(dbData.homeWidgetSettings){
+                await dataStorage.saveData('homeWidgetSettings', dbData.homeWidgetSettings);
             }
             return Promise.resolve();
         };
@@ -6325,8 +7221,32 @@ return Promise.resolve();
                 };
             }
 
-            return Promise.resolve();
-        };
+            db.pomodoroTasks = await dataStorage.getData('pomodoroTasks') || [];
+            const loadedPomodoroSettings = await dataStorage.getData('pomodoroSettings');
+            db.pomodoroSettings = {
+                boundCharId: null,
+                userPersona: '',
+                focusBackground: '',
+                taskCardBackground: '',
+                encouragementMinutes: 25,
+                pokeLimit: 5,
+                globalWorldBookIds: [], // NEW: Initialize global world book IDs
+                ...loadedPomodoroSettings
+            };
+           db.insWidgetSettings = await dataStorage.getData('insWidgetSettings') || {
+               avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg',
+               bubble1: 'love u.',
+               avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg',
+               bubble2: 'miss u.'
+           };
+
+        db.homeWidgetSettings = await dataStorage.getData('homeWidgetSettings') || JSON.parse(JSON.stringify(defaultWidgetSettings));
+        if (!db.homeWidgetSettings.polaroidImage) {
+            db.homeWidgetSettings.polaroidImage = 'https://i.postimg.cc/XvFDdTKY/Smart-Select-20251013-023208.jpg';
+        }
+
+         return Promise.resolve();
+     };
 
         let notificationQueue = [];
         let isToastVisible = false;
@@ -6476,6 +7396,799 @@ return Promise.resolve();
             previewContainer.appendChild(sentBubble);
         }
 
+        function setupStorageAnalysisScreen() {
+            const screen = document.getElementById('storage-analysis-screen');
+            const chartContainer = document.getElementById('storage-chart-container');
+            const detailsList = document.getElementById('storage-details-list');
+            let myChart = null;
+
+            // 定义一个共享的颜色调色板
+            const colorPalette = ['#ff80ab', '#90caf9', '#a5d6a7', '#fff59d', '#b39ddb', '#ffcc80'];
+
+            const categoryNames = {
+                messages: '聊天记录',
+                charactersAndGroups: '角色与群组',
+                worldAndForum: '世界书与论坛',
+                personalization: '个性化设置',
+                apiAndCore: '核心与API',
+                other: '其他数据'
+            };
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            // 修改函数签名，接收颜色数组
+            function renderStorageChart(info, colors) {
+                if (!myChart) {
+                    myChart = echarts.init(chartContainer);
+                }
+
+                const chartData = Object.entries(info.categorizedSizes)
+                    .map(([key, value]) => ({
+                        name: categoryNames[key] || key,
+                        value: value
+                    }))
+                    .filter(item => item.value > 0);
+
+                const option = {
+                    // 将颜色数组应用到图表
+                    color: colors,
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        show: false // 隐藏图例，因为我们下面有更详细的列表
+                    },
+                    series: [
+                        {
+                            name: '存储占比',
+                            type: 'pie',
+                            radius: ['50%', '70%'],
+                            avoidLabelOverlap: false,
+                            label: {
+                                show: false,
+                                position: 'center'
+                            },
+                            emphasis: {
+                                label: {
+                                    show: true,
+                                    fontSize: '20',
+                                    fontWeight: 'bold'
+                                }
+                            },
+                            labelLine: {
+                                show: false
+                            },
+                            data: chartData
+                        }
+                    ]
+                };
+                myChart.setOption(option);
+            }
+
+            // 修改函数签名，接收颜色数组
+            function renderStorageDetails(info, colors) {
+                detailsList.innerHTML = '';
+                const totalSize = info.totalSize;
+
+                const totalSizeEl = document.getElementById('storage-total-size');
+                if (totalSizeEl) {
+                    totalSizeEl.textContent = formatBytes(totalSize);
+                }
+        
+
+                const sortedData = Object.entries(info.categorizedSizes)
+                    .map(([key, value]) => ({
+                        key: key,
+                        name: categoryNames[key] || key,
+                        value: value
+                    }))
+                    .sort((a, b) => b.value - a.value);
+
+                // 不再从图表实例获取颜色，直接使用传入的参数
+                sortedData.forEach((item, index) => {
+                    if (item.value <= 0) return; // 不显示大小为0的项目
+                    const percentage = totalSize > 0 ? ((item.value / totalSize) * 100).toFixed(2) : 0;
+                    const color = colors[index % colors.length];
+
+                    const detailItem = document.createElement('div');
+                    detailItem.className = 'storage-detail-item';
+                    detailItem.innerHTML = `
+                        <div class="storage-color-indicator" style="background-color: ${color};"></div>
+                        <div class="storage-detail-info">
+                            <span class="storage-detail-name">${item.name}</span>
+                            <span class="storage-detail-size">${formatBytes(item.value)}</span>
+                        </div>
+                        <span class="storage-detail-percentage">${percentage}%</span>
+                    `;
+                    detailsList.appendChild(detailItem);
+                });
+            }
+
+            const observer = new MutationObserver(async (mutations) => {
+                if (screen.classList.contains('active')) {
+                    showToast('正在分析存储空间...');
+                    const storageInfo = await dataStorage.getStorageInfo();
+                    if (storageInfo) {
+                        // 将颜色数组传递给两个函数
+                        renderStorageChart(storageInfo, colorPalette);
+                        renderStorageDetails(storageInfo, colorPalette);
+                    } else {
+                        showToast('分析失败');
+                    }
+                }
+            });
+
+            observer.observe(screen, { attributes: true, attributeFilter: ['class'] });
+        }
+
+        function renderPomodoroTasks() {
+            const taskListContainer = document.getElementById('pomodoro-task-list');
+            const placeholder = document.getElementById('pomodoro-no-tasks-placeholder');
+            if (!taskListContainer || !placeholder) return;
+
+            taskListContainer.innerHTML = ''; // Clear existing tasks
+
+            if (!db.pomodoroTasks || db.pomodoroTasks.length === 0) {
+                placeholder.style.display = 'block';
+                taskListContainer.style.display = 'none';
+                return;
+            }
+
+            placeholder.style.display = 'none';
+            taskListContainer.style.display = 'flex';
+
+            db.pomodoroTasks.forEach(task => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'task-card-wrapper';
+                wrapper.dataset.id = task.id;
+
+                const pomodorosText = task.mode === 'countdown' ? `倒计时模式` : '正计时模式';
+                const durationText = task.mode === 'countdown' ? `${task.duration}分钟` : '';
+
+                wrapper.innerHTML = `
+                    <div class="task-card">
+                        <div class="task-card-info">
+                            <h4 class="task-card-title">${DOMPurify.sanitize(task.name)}</h4>
+                            <p class="task-card-details">${pomodorosText} ${durationText}</p>
+                        </div>
+                        <button class="task-card-start-btn">开始</button>
+                    </div>
+                    <button class="task-card-delete-btn">删除</button>
+                `;
+                taskListContainer.appendChild(wrapper);
+            });
+        }
+
+        function setupPomodoroApp() {
+            const createTaskBtn = document.getElementById('pomodoro-create-task-btn');
+            const createModal = document.getElementById('pomodoro-create-modal');
+            const createForm = document.getElementById('pomodoro-create-form');
+            const modeRadios = document.querySelectorAll('input[name="pomodoro-mode"]');
+            const durationOptions = document.getElementById('pomodoro-duration-options');
+            const durationPills = durationOptions.querySelectorAll('.duration-pill');
+            const customDurationInput = document.getElementById('pomodoro-custom-duration-input');
+
+            // Focus Screen elements
+            const focusScreen = document.getElementById('pomodoro-focus-screen');
+            const focusTitleEl = focusScreen.querySelector('.focus-task-title');
+            const focusTimerEl = focusScreen.querySelector('.focus-timer-display');
+            const focusModeEl = focusScreen.querySelector('.focus-timer-mode');
+            const startBtn = document.getElementById('pomodoro-start-btn');
+            const pauseBtn = document.getElementById('pomodoro-pause-btn');
+            const giveUpBtn = document.getElementById('pomodoro-giveup-btn');
+            const focusAvatar = focusScreen.querySelector('.focus-avatar');
+            const focusMessageBubble = focusScreen.querySelector('.focus-message-bubble');
+
+            if (focusAvatar && focusMessageBubble) {
+                focusAvatar.addEventListener('click', () => {
+                    // "Poke" feature logic
+                    if (isPomodoroPaused || !pomodoroInterval || !currentPomodoroTask) return;
+
+                    pomodoroIsInterrupted = true;
+                    pomodoroPokeCount++;
+
+                    const pokeLimit = currentPomodoroTask.settings.pokeLimit || 5;
+
+                    if (pomodoroPokeCount > pokeLimit) {
+                        showTypewriterMessage(focusMessageBubble.querySelector('p'), '传讯次数已经到达上限啦，请再专心一点吧宝宝^^');
+                    } else {
+                        getPomodoroAiReply('poke');
+                    }
+                });
+            }
+
+
+            // --- Timer Core Logic ---
+            function updateTimerDisplay() {
+                const hours = Math.floor(pomodoroRemainingSeconds / 3600);
+                const minutes = Math.floor((pomodoroRemainingSeconds % 3600) / 60);
+                const seconds = pomodoroRemainingSeconds % 60;
+
+                if (pomodoroRemainingSeconds >= 3600) {
+                    focusTimerEl.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                } else {
+                    focusTimerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+            }
+
+            function updateTotalFocusedTimeDisplay() {
+                const totalMinutes = Math.floor(pomodoroCurrentSessionSeconds / 60);
+                const totalTimeEl = document.getElementById('pomodoro-total-focused-time');
+                if (totalTimeEl) {
+                    totalTimeEl.textContent = `已专注 ${totalMinutes} 分钟`;
+                }
+            }
+
+            function stopTimer() {
+                clearInterval(pomodoroInterval);
+                pomodoroInterval = null;
+                isPomodoroPaused = true;
+                startBtn.style.display = 'inline-flex';
+                pauseBtn.style.display = 'none';
+            }
+
+            function startTimer() {
+                if (pomodoroInterval) return; // Already running
+
+                // NEW: Check for resume from a paused state
+                if (isPomodoroPaused && pomodoroCurrentSessionSeconds > 0) {
+                    getPomodoroAiReply('resume');
+                }
+
+                isPomodoroPaused = false;
+                pomodoroIsInterrupted = false; // Also reset this flag on resume
+                startBtn.style.display = 'none';
+                pauseBtn.style.display = 'inline-flex';
+
+                pomodoroInterval = setInterval(() => {
+                    if (currentPomodoroTask.mode === 'countdown') {
+                        pomodoroRemainingSeconds--;
+                    } else { // stopwatch
+                        pomodoroRemainingSeconds++;
+                    }
+                    pomodoroCurrentSessionSeconds++;
+                    updateTimerDisplay();
+                    updateTotalFocusedTimeDisplay();
+
+                    // Check for encouragement
+                    if (currentPomodoroTask && currentPomodoroTask.settings) {
+                        const encouragementMinutes = currentPomodoroTask.settings.encouragementMinutes || 25;
+                        if (pomodoroCurrentSessionSeconds > 0 && (pomodoroCurrentSessionSeconds % (encouragementMinutes * 60)) === 0 && !pomodoroIsInterrupted) {
+                            getPomodoroAiReply('encouragement');
+                        }
+                    }
+
+                    if (currentPomodoroTask.mode === 'countdown' && pomodoroRemainingSeconds <= 0) {
+                        stopTimer();
+                        handlePomodoroCompletion();
+                    }
+                }, 1000);
+            }
+
+            function pauseTimer() {
+                pomodoroIsInterrupted = true; // Pausing counts as an interruption
+                isPomodoroPaused = true;
+                clearInterval(pomodoroInterval);
+                pomodoroInterval = null;
+                startBtn.style.display = 'inline-flex';
+                pauseBtn.style.display = 'none';
+            }
+
+            // --- Event Listeners for Controls ---
+            startBtn.addEventListener('click', startTimer);
+            pauseBtn.addEventListener('click', pauseTimer);
+            giveUpBtn.addEventListener('click', () => {
+                if (confirm('确定要放弃当前任务吗？')) {
+                    stopTimer();
+                    currentPomodoroTask = null;
+                    switchScreen('pomodoro-screen');
+                }
+            });
+
+            // Certificate modal listeners
+            const certModal = document.getElementById('pomodoro-certificate-modal');
+            const forwardCertBtn = document.getElementById('forward-certificate-btn');
+            const closeCertBtn = document.getElementById('close-certificate-btn');
+
+            forwardCertBtn.addEventListener('click', async () => {
+                const taskName = document.getElementById('cert-task-name').textContent;
+                const duration = document.getElementById('cert-duration').textContent;
+                const pokeCount = document.getElementById('cert-poke-count').textContent;
+                const chat = db.characters.find(c => c.id === currentPomodoroTask.settings.boundCharId);
+
+                if (chat) {
+                    const messageContent = `[pomodoro-record:{"taskName":"${taskName}","duration":"${duration}","pokeCount":"${pokeCount}"}]`;
+                    const message = {
+                        id: `msg_pomodoro_${Date.now()}`,
+                        role: 'user',
+                        content: messageContent,
+                        parts: [{ type: 'text', text: messageContent }],
+                        timestamp: Date.now(),
+                        senderId: 'user_me'
+                    };
+                    chat.history.push(message);
+                    await saveData();
+                    showToast('已转发到聊天框！');
+                    renderChatList();
+                }
+                certModal.classList.remove('visible');
+                switchScreen('pomodoro-screen');
+            });
+
+            closeCertBtn.addEventListener('click', () => {
+                certModal.classList.remove('visible');
+                switchScreen('pomodoro-screen');
+            });
+
+            // --- NEW: Record Detail Modal Listeners ---
+            const recordDetailModal = document.getElementById('pomodoro-record-detail-modal');
+            const closeRecordDetailBtn = document.getElementById('close-record-detail-btn');
+
+            if (recordDetailModal && closeRecordDetailBtn) {
+                closeRecordDetailBtn.addEventListener('click', () => {
+                    recordDetailModal.classList.remove('visible');
+                });
+
+                recordDetailModal.addEventListener('click', (e) => {
+                    if (e.target === recordDetailModal) {
+                        recordDetailModal.classList.remove('visible');
+                    }
+                });
+            }
+            // --- END NEW ---
+
+            function handlePomodoroCompletion() {
+                const certModal = document.getElementById('pomodoro-certificate-modal');
+                document.getElementById('cert-task-name').textContent = currentPomodoroTask.name;
+                const totalMinutes = Math.floor(pomodoroCurrentSessionSeconds / 60);
+                document.getElementById('cert-duration').textContent = `${totalMinutes} 分钟`;
+                document.getElementById('cert-poke-count').textContent = pomodoroPokeCount;
+
+                // 新增：清空并隐藏对话框
+                const focusMessageBubble = document.querySelector('#pomodoro-focus-screen .focus-message-bubble');
+                if (focusMessageBubble) {
+                    focusMessageBubble.classList.remove('visible');
+                    focusMessageBubble.querySelector('p').textContent = '';
+                }
+
+                // No longer call AI for completion
+                certModal.classList.add('visible');
+            }
+
+            function showPomodoroTypingIndicator(element) {
+                element.innerHTML = '对方正在输入中<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
+            }
+
+            function showTypewriterMessage(element, text) {
+                let i = 0;
+                element.innerHTML = ''; // Clear previous content
+                const typingInterval = setInterval(() => {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                    } else {
+                        clearInterval(typingInterval);
+                    }
+                }, 50);
+            }
+
+            async function getPomodoroAiReply(promptType) {
+                const focusMessageBubble = document.querySelector('.focus-message-bubble');
+                const messageP = focusMessageBubble.querySelector('p');
+                const settings = currentPomodoroTask.settings;
+                const character = db.characters.find(c => c.id === settings.boundCharId);
+
+                if (!character) {
+                    focusMessageBubble.classList.remove('visible');
+                    return;
+                }
+
+                const userPersonaPreset = db.myPersonaPresets.find(p => p.name === settings.userPersona);
+                const userPersona = userPersonaPreset ? userPersonaPreset.persona : '一个普通人';
+
+                let prompt;
+                const totalMinutes = Math.floor(pomodoroCurrentSessionSeconds / 60);
+                const remainingMinutes = Math.round(pomodoroRemainingSeconds / 60);
+                const taskName = currentPomodoroTask.name;
+
+                switch (promptType) {
+                    case 'encouragement':
+                        if (currentPomodoroTask.mode === 'countdown') {
+                            prompt = `你正在扮演[${character.realName}]。用户正在进行专注任务“${taskName}”，已连续专注了[${totalMinutes}]分钟，还剩下大约[${remainingMinutes}]分钟。请根据你的人设、任务内容和剩余时间，以鼓励用户为目的，给用户发送一条文字消息。`;
+                        } else { // stopwatch
+                            prompt = `你正在扮演[${character.realName}]。用户正在进行专注任务“${taskName}”，已经连续专注了[${totalMinutes}]分钟。请根据你的人设和任务内容，以鼓励用户为目的，给用户发送一条文字消息。`;
+                        }
+                        break;
+                    case 'poke':
+                        if (currentPomodoroTask.mode === 'countdown') {
+                            prompt = `你正在扮演[${character.realName}]。用户在进行专注任务“${taskName}”时，专注了[${totalMinutes}]分钟（还剩下大约[${remainingMinutes}]分钟），忍不住第${pomodoroPokeCount}次戳了戳你的头像。请根据你的人设、任务内容和剩余时间，给用户回复一条文字消息。`;
+                        } else { // stopwatch
+                            prompt = `你正在扮演[${character.realName}]。用户在进行专注任务“${taskName}”时，已经连续专注了[${totalMinutes}]分钟，这时忍不住第${pomodoroPokeCount}次戳了戳你的头像。请根据你的人设和任务内容，给用户回复一条文字消息。`;
+                        }
+                        break;
+                    case 'resume':
+                        prompt = `你正在扮演[${character.realName}]。用户正在进行专注任务“${taskName}”，刚刚暂停了任务后又重新开始了。请根据你的人设，给用户回复一条文字消息。`;
+                        break;
+                }
+
+                // NEW: Add session history context
+                if (pomodoroSessionHistory && pomodoroSessionHistory.length > 0) {
+                    const myName = character.myName || '我';
+                    const charName = character.realName || '角色';
+                    const historyContext = pomodoroSessionHistory.map(item => {
+                        if (item.type === 'user') {
+                            return `[${myName}的消息：(执行操作: ${item.content})]`;
+                        } else {
+                            return `[${charName}的消息：${item.content}]`;
+                        }
+                    }).join('\n');
+                    prompt += `\n\n【本次专注期间的简短互动历史】\n${historyContext}\n\n请基于以上历史，继续你的下一句回应。`;
+                }
+ 
+                focusMessageBubble.classList.add('visible');
+                showPomodoroTypingIndicator(messageP);
+
+                try {
+                    const { url, key, model } = db.apiSettings;
+                    if (!url || !key || !model) {
+                        messageP.textContent = 'API未配置，无法获取回应。';
+                        return;
+                    }
+
+                    // --- NEW: Construct system prompt with world books ---
+                    const globalWorldBookIds = db.pomodoroSettings?.globalWorldBookIds || [];
+                    const globalWorldBooksBefore = globalWorldBookIds
+                        .map(id => db.worldBooks.find(wb => wb.id === id && wb.position === 'before'))
+                        .filter(Boolean)
+                        .map(wb => wb.content)
+                        .join('\n\n');
+                    const globalWorldBooksAfter = globalWorldBookIds
+                        .map(id => db.worldBooks.find(wb => wb.id === id && wb.position === 'after'))
+                        .filter(Boolean)
+                        .map(wb => wb.content)
+                        .join('\n\n');
+
+                    let systemPromptContent = `你正在扮演角色。你的名字是${character.realName}。`;
+                    if (globalWorldBooksBefore) {
+                        systemPromptContent += `\n\n【全局世界观设定】\n${globalWorldBooksBefore}`;
+                    }
+                    systemPromptContent += `\n\n【你的角色设定】\n人设: ${character.persona}`;
+                    if (globalWorldBooksAfter) {
+                        systemPromptContent += `\n\n【补充设定】\n${globalWorldBooksAfter}`;
+                    }
+                    systemPromptContent += `\n\n【我的角色设定】\n我的名字是${character.myName}，人设是：${userPersona}。`;
+                    // --- END NEW ---
+
+                    const response = await fetch(`${url}/v1/chat/completions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${key}`
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: [
+                                { role: 'system', content: systemPromptContent },
+                                { role: 'user', content: prompt }
+                            ],
+                            temperature: 0.8
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('API请求失败');
+                    }
+
+                    const result = await response.json();
+                    const reply = result.choices[0].message.content;
+
+                    // NEW: Add user action and AI reply to session history
+                    pomodoroSessionHistory.push({ type: 'user', content: promptType });
+                    pomodoroSessionHistory.push({ type: 'ai', content: reply });
+                    // Keep history short, e.g., last 4 pairs
+                    if (pomodoroSessionHistory.length > 8) {
+                        pomodoroSessionHistory.splice(0, 2);
+                    }
+
+                    showTypewriterMessage(messageP, reply);
+ 
+                    // If the reply was for a 'poke', start a timer to reset the interruption flag.
+                    if (promptType === 'poke') {
+                        setTimeout(() => {
+                            pomodoroIsInterrupted = false;
+                        }, 10000); // 10 seconds
+                    }
+
+                } catch (error) {
+                    console.error('获取AI回应失败:', error);
+                    messageP.textContent = '获取回应失败，请检查网络或API设置。';
+                }
+            }
+
+
+            // Show create task modal
+            if (createTaskBtn) {
+                createTaskBtn.addEventListener('click', () => {
+                    // Reset form to default state on open
+                    createForm.reset();
+                    durationOptions.classList.add('visible');
+                    durationPills.forEach(p => p.classList.remove('active'));
+                    if (durationPills.length > 0) {
+                        durationPills[0].classList.add('active');
+                    }
+                    customDurationInput.style.display = 'none';
+                    document.getElementById('mode-countdown').checked = true;
+                    document.getElementById('mode-stopwatch').checked = false;
+
+                    createModal.classList.add('visible');
+                });
+            }
+
+            // Handle mode change (countdown vs stopwatch)
+            modeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.value === 'countdown') {
+                        durationOptions.classList.add('visible');
+                    } else {
+                        durationOptions.classList.remove('visible');
+                    }
+                });
+            });
+
+            // Handle duration pill selection
+            durationPills.forEach(pill => {
+                pill.addEventListener('click', () => {
+                    durationPills.forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    if (pill.dataset.duration === 'custom') {
+                        customDurationInput.style.display = 'block';
+                        customDurationInput.focus();
+                    } else {
+                        customDurationInput.style.display = 'none';
+                    }
+                });
+            });
+
+            // Handle form submission
+            if (createForm) {
+                createForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const taskName = document.getElementById('pomodoro-task-name').value.trim();
+                    if (!taskName) {
+                        showToast('请输入任务名称');
+                        return;
+                    }
+
+                    const mode = document.querySelector('input[name="pomodoro-mode"]:checked').value;
+                    let duration = 0;
+
+                    if (mode === 'countdown') {
+                        const activePill = durationOptions.querySelector('.duration-pill.active');
+                        if (activePill.dataset.duration === 'custom') {
+                            duration = parseInt(customDurationInput.value, 10);
+                            if (isNaN(duration) || duration <= 0) {
+                                showToast('请输入有效的自定义分钟数');
+                                return;
+                            }
+                        } else {
+                            duration = parseInt(activePill.dataset.duration, 10);
+                        }
+                    }
+
+                    const newTask = {
+                        id: `pomodoro_${Date.now()}`,
+                        name: taskName,
+                        mode: mode,
+                        duration: duration,
+                        status: 'pending',
+                        // 为每个任务创建独立的设置副本
+                        settings: JSON.parse(JSON.stringify(db.pomodoroSettings))
+                    };
+
+                    if (!db.pomodoroTasks) {
+                        db.pomodoroTasks = [];
+                    }
+                    db.pomodoroTasks.push(newTask);
+                    await saveData();
+
+                    showToast(`任务 "${taskName}" 已创建`);
+                    renderPomodoroTasks();
+
+                    createModal.classList.remove('visible');
+                });
+            }
+
+            const screen = document.getElementById('pomodoro-screen');
+            if (screen) {
+                const observer = new MutationObserver(() => {
+                    if (screen.classList.contains('active')) {
+                        renderPomodoroTasks();
+                    }
+                });
+                observer.observe(screen, { attributes: true, attributeFilter: ['class'] });
+            }
+
+            const taskListContainer = document.getElementById('pomodoro-task-list');
+
+            // --- Swipe to delete logic ---
+            let touchStartX = 0;
+            let touchCurrentX = 0;
+            let swipedCardWrapper = null;
+            let isDragging = false;
+            const swipeThreshold = 50; // Min pixels to trigger swipe
+
+            const handleSwipeStart = (x, target) => {
+                touchStartX = x;
+                isDragging = true;
+                // Close any other swiped card
+                const targetWrapper = target.closest('.task-card-wrapper');
+                if (swipedCardWrapper && swipedCardWrapper !== targetWrapper) {
+                    swipedCardWrapper.classList.remove('is-swiped');
+                    swipedCardWrapper = null;
+                }
+            };
+
+            const handleSwipeMove = (x, target) => {
+                if (!isDragging) return;
+                const cardWrapper = target.closest('.task-card-wrapper');
+                if (!cardWrapper) return;
+
+                touchCurrentX = x;
+                const deltaX = touchCurrentX - touchStartX;
+
+                // Only allow left swipe
+                if (deltaX < 0) {
+                    // Prevent over-swiping
+                    const distance = Math.max(deltaX, -80);
+                    cardWrapper.querySelector('.task-card').style.transform = `translateX(${distance}px)`;
+                }
+            };
+
+            const handleSwipeEnd = (target) => {
+                if (!isDragging) return;
+                isDragging = false;
+
+                const cardWrapper = target.closest('.task-card-wrapper');
+                if (!cardWrapper) return;
+
+                const card = cardWrapper.querySelector('.task-card');
+                const deltaX = touchCurrentX - touchStartX;
+
+                // Reset inline style
+                card.style.transform = '';
+
+                if (deltaX < -swipeThreshold) {
+                    cardWrapper.classList.add('is-swiped');
+                    swipedCardWrapper = cardWrapper;
+                } else {
+                    cardWrapper.classList.remove('is-swiped');
+                    if (swipedCardWrapper === cardWrapper) {
+                        swipedCardWrapper = null;
+                    }
+                }
+                
+                // Reset positions
+                touchStartX = 0;
+                touchCurrentX = 0;
+            };
+
+            taskListContainer.addEventListener('touchstart', (e) => {
+                handleSwipeStart(e.touches[0].clientX, e.target);
+            }, { passive: true });
+
+            taskListContainer.addEventListener('touchmove', (e) => {
+                handleSwipeMove(e.touches[0].clientX, e.target);
+            }, { passive: true });
+
+            taskListContainer.addEventListener('touchend', (e) => {
+                handleSwipeEnd(e.target);
+            });
+            
+            // Mouse events for desktop
+            taskListContainer.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.task-card-start-btn') || e.target.closest('.task-card-delete-btn')) return;
+                handleSwipeStart(e.clientX, e.target);
+            });
+
+            taskListContainer.addEventListener('mousemove', (e) => {
+                handleSwipeMove(e.clientX, e.target);
+            });
+
+            taskListContainer.addEventListener('mouseup', (e) => {
+                handleSwipeEnd(e.target);
+            });
+            
+            taskListContainer.addEventListener('mouseleave', (e) => {
+                if (isDragging) {
+                    handleSwipeEnd(e.target);
+                }
+            });
+
+
+            // --- Click handling for start and delete ---
+            if (taskListContainer) {
+                taskListContainer.addEventListener('click', async (e) => {
+                    const startBtn = e.target.closest('.task-card-start-btn');
+                    const deleteBtn = e.target.closest('.task-card-delete-btn');
+                    const cardWrapper = e.target.closest('.task-card-wrapper');
+
+                    if (deleteBtn && cardWrapper) {
+                        const taskId = cardWrapper.dataset.id;
+                        if (confirm('确定要删除这个任务吗？')) {
+                            db.pomodoroTasks = db.pomodoroTasks.filter(t => t.id !== taskId);
+                            await saveData();
+                            renderPomodoroTasks();
+                            showToast('任务已删除');
+                        }
+                    } else if (startBtn && cardWrapper) {
+                        const taskId = cardWrapper.dataset.id;
+                        const task = db.pomodoroTasks.find(t => t.id === taskId);
+                        
+                        if (task) {
+                            // --- Start Focus Session ---
+                            currentPomodoroTask = task;
+                            stopTimer(); // Ensure any previous timer is stopped
+                            pomodoroCurrentSessionSeconds = 0; // Reset session timer
+                            pomodoroPokeCount = 0; // Reset poke count
+                            pomodoroIsInterrupted = false; // Reset interruption flag
+                            pomodoroSessionHistory = []; // NEW: Reset session history
+ 
+                            // 新增：清空并隐藏对话框
+                            const focusMessageBubble = document.querySelector('#pomodoro-focus-screen .focus-message-bubble');
+                            if (focusMessageBubble) {
+                                focusMessageBubble.classList.remove('visible');
+                                focusMessageBubble.querySelector('p').textContent = '';
+                            }
+
+                            focusTitleEl.textContent = task.name;
+                            focusModeEl.textContent = task.mode === 'countdown' ? '倒计时' : '正计时';
+                            
+                            if (task.mode === 'countdown') {
+                                pomodoroRemainingSeconds = task.duration * 60;
+                            } else {
+                                pomodoroRemainingSeconds = 0;
+                            }
+                            
+                            updateTimerDisplay();
+                            updateTotalFocusedTimeDisplay(); // Update display to show 0
+
+                            // NEW: Update avatar based on bound character
+                            const focusAvatarEl = document.querySelector('#pomodoro-focus-screen .focus-avatar');
+                            if (task.settings && task.settings.boundCharId) {
+                                const boundChar = db.characters.find(c => c.id === task.settings.boundCharId);
+                                if (boundChar && focusAvatarEl) {
+                                    focusAvatarEl.src = boundChar.avatar;
+                                } else if (focusAvatarEl) {
+                                    focusAvatarEl.src = 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg'; // Fallback
+                                }
+                            } else if (focusAvatarEl) {
+                                focusAvatarEl.src = 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg'; // Fallback
+                            }
+                            // END NEW
+ 
+                            applyPomodoroBackgrounds(); // Apply backgrounds when starting a task
+                            // Timer is now started from the focus screen, not automatically.
+                            switchScreen('pomodoro-focus-screen');
+                        }
+                    } else if (cardWrapper && !cardWrapper.classList.contains('is-swiped')) {
+                        // If a non-swiped card is clicked, close any open one
+                        if (swipedCardWrapper) {
+                            swipedCardWrapper.classList.remove('is-swiped');
+                            swipedCardWrapper = null;
+                        }
+                    }
+                });
+            }
+        }
+
         const init = async () => {
             await loadData();
             if (!db.homeWidgetSettings || !db.homeWidgetSettings.topLeft) {
@@ -6519,6 +8232,7 @@ return Promise.resolve();
             setInterval(updateClock, 30000);
             applyGlobalFont(db.fontUrl);
             applyGlobalCss(db.globalCss);
+            applyPomodoroBackgrounds();
             setupHomeScreen();
             setupChatListScreen();
             setupAddCharModal();
@@ -6547,7 +8261,395 @@ return Promise.resolve();
             setupForumFeature();
             setupShareModal();
             setupStorageAnalysisScreen();
+            setupPomodoroApp();
+            setupPomodoroSettings();
+            setupPomodoroGlobalSettings(); // NEW: Setup global settings
+            setupInsWidgetAvatarModal();
+            setupHeartPhotoModal();
         };
+
+        function setupInsWidgetAvatarModal() {
+            const modal = document.getElementById('ins-widget-avatar-modal');
+            const form = document.getElementById('ins-widget-avatar-form');
+            const preview = document.getElementById('ins-widget-avatar-preview');
+            const urlInput = document.getElementById('ins-widget-avatar-url-input');
+            const fileUpload = document.getElementById('ins-widget-avatar-file-upload');
+            const targetInput = document.getElementById('ins-widget-avatar-target');
+
+            // Use event delegation on homeScreen for avatars since it's re-rendered
+            const homeScreen = document.getElementById('home-screen');
+            homeScreen.addEventListener('click', (e) => {
+                const avatar1 = e.target.closest('#ins-widget-avatar-1');
+                const avatar2 = e.target.closest('#ins-widget-avatar-2');
+
+                let targetAvatarId = null;
+                let currentSrc = '';
+
+                if (avatar1) {
+                    targetAvatarId = 'avatar1';
+                    currentSrc = db.insWidgetSettings.avatar1;
+                } else if (avatar2) {
+                    targetAvatarId = 'avatar2';
+                    currentSrc = db.insWidgetSettings.avatar2;
+                }
+
+                if (targetAvatarId) {
+                    targetInput.value = targetAvatarId;
+                    preview.style.backgroundImage = `url("${currentSrc}")`;
+                    preview.innerHTML = ''; // Clear "预览" text
+                    urlInput.value = '';
+                    fileUpload.value = null;
+                    modal.classList.add('visible');
+                }
+            });
+
+            // Handle URL input
+            urlInput.addEventListener('input', () => {
+                const url = urlInput.value.trim();
+                if (url) {
+                    preview.style.backgroundImage = `url("${url}")`;
+                    preview.innerHTML = '';
+                    fileUpload.value = null; // Clear file input if URL is used
+                } else {
+                    preview.style.backgroundImage = 'none';
+                    preview.innerHTML = '<span>预览</span>';
+                }
+            });
+
+            // Handle file upload
+            fileUpload.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        const compressedUrl = await compressImage(file, { quality: 0.8, maxWidth: 200, maxHeight: 200 });
+                        preview.style.backgroundImage = `url("${compressedUrl}")`;
+                        preview.innerHTML = '';
+                        urlInput.value = ''; // Clear URL input if file is used
+                    } catch (error) {
+                        showToast('图片压缩失败，请重试');
+                        preview.style.backgroundImage = 'none';
+                        preview.innerHTML = '<span>预览</span>';
+                    }
+                }
+            });
+
+            // Handle form submission
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const targetAvatar = targetInput.value;
+                const bgImage = preview.style.backgroundImage;
+                const newSrc = bgImage.slice(5, -2); // Extract URL from 'url("...")'
+
+                if (!targetAvatar || !newSrc) {
+                    showToast('没有要保存的图片');
+                    return;
+                }
+
+                if (targetAvatar === 'centralCircle') {
+                    db.homeWidgetSettings.centralCircleImage = newSrc;
+                } else if (targetAvatar === 'avatar1') {
+                    db.insWidgetSettings.avatar1 = newSrc;
+                } else if (targetAvatar === 'avatar2') {
+                    db.insWidgetSettings.avatar2 = newSrc;
+                }
+
+                await saveData();
+                setupHomeScreen(); // Re-render the home screen to show the new avatar
+                modal.classList.remove('visible');
+                showToast('头像已更新');
+            });
+        }
+
+       function updatePolaroidImage(imageUrl) {
+           const styleId = 'polaroid-image-style';
+           let styleElement = document.getElementById(styleId);
+           if (!styleElement) {
+               styleElement = document.createElement('style');
+               styleElement.id = styleId;
+               document.head.appendChild(styleElement);
+           }
+           styleElement.innerHTML = `
+               .heart-photo-widget::after {
+                   background-image: url('${imageUrl}');
+               }
+           `;
+       }
+
+       function setupHeartPhotoModal() {
+           const widget = document.querySelector('.heart-photo-widget');
+           const modal = document.getElementById('heart-photo-modal');
+           const form = document.getElementById('heart-photo-form');
+           const preview = document.getElementById('heart-photo-preview');
+           const urlInput = document.getElementById('heart-photo-url-input');
+           const fileUpload = document.getElementById('heart-photo-file-upload');
+
+           if (!widget || !modal || !form) return;
+
+           // 1. Open modal on widget click
+           widget.addEventListener('click', () => {
+               // Get current image to display in preview
+               const currentImage = db.homeWidgetSettings?.polaroidImage || 'https://i.postimg.cc/XvFDdTKY/Smart-Select-20251013-023208.jpg';
+               preview.style.backgroundImage = `url("${currentImage}")`;
+               preview.innerHTML = '';
+               urlInput.value = '';
+               fileUpload.value = null;
+               modal.classList.add('visible');
+           });
+
+           // 2. Handle image preview (URL input)
+           urlInput.addEventListener('input', () => {
+               const url = urlInput.value.trim();
+               if (url) {
+                   preview.style.backgroundImage = `url("${url}")`;
+                   preview.innerHTML = '';
+                   fileUpload.value = null; // Clear file input
+               } else {
+                   preview.style.backgroundImage = 'none';
+                   preview.innerHTML = '<span>预览</span>';
+               }
+           });
+
+           // 3. Handle image preview (File upload)
+           fileUpload.addEventListener('change', async (e) => {
+               const file = e.target.files[0];
+               if (file) {
+                   try {
+                       const compressedUrl = await compressImage(file, { quality: 0.8, maxWidth: 400, maxHeight: 400 });
+                       preview.style.backgroundImage = `url("${compressedUrl}")`;
+                       preview.innerHTML = '';
+                       urlInput.value = ''; // Clear URL input
+                   } catch (error) {
+                       showToast('图片压缩失败，请重试');
+                       preview.style.backgroundImage = 'none';
+                       preview.innerHTML = '<span>预览</span>';
+                   }
+               }
+           });
+
+           // 4. Handle form submission
+           form.addEventListener('submit', async (e) => {
+               e.preventDefault();
+               const bgImage = preview.style.backgroundImage;
+               const newSrc = bgImage.slice(5, -2); // Extract URL from 'url("...")'
+
+               if (!newSrc) {
+                   showToast('没有要保存的图片');
+                   return;
+               }
+
+               // Ensure homeWidgetSettings exists
+               if (!db.homeWidgetSettings) {
+                   db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
+               }
+               db.homeWidgetSettings.polaroidImage = newSrc;
+
+               await saveData();
+               
+               updatePolaroidImage(newSrc);
+
+               modal.classList.remove('visible');
+               showToast('拍立得照片已更新');
+           });
+       }
+
+        function setupPomodoroSettings() {
+            const settingsBtn = document.getElementById('pomodoro-focus-settings-btn');
+            const settingsSidebar = document.getElementById('pomodoro-settings-sidebar');
+            const settingsForm = document.getElementById('pomodoro-settings-form');
+            const focusBgUpload = document.getElementById('pomodoro-focus-bg-upload');
+            const taskCardBgUpload = document.getElementById('pomodoro-task-card-bg-upload');
+
+            settingsBtn?.addEventListener('click', () => {
+                if (currentPomodoroTask) {
+                    currentPomodoroSettingsContext = currentPomodoroTask.settings;
+                    loadSettingsToPomodoroSidebar(currentPomodoroSettingsContext);
+                    settingsSidebar.classList.add('open');
+                } else {
+                    showToast('没有正在进行的专注任务');
+                }
+            });
+
+            settingsForm?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (currentPomodoroSettingsContext) {
+                    await savePomodoroSettingsFromSidebar(currentPomodoroSettingsContext);
+                }
+                settingsSidebar.classList.remove('open');
+            });
+
+            focusBgUpload?.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file && currentPomodoroSettingsContext) {
+                    try {
+                        const compressedUrl = await compressImage(file, { quality: 0.85, maxWidth: 1080, maxHeight: 1920 });
+                        document.getElementById('pomodoro-focus-bg-url').value = compressedUrl;
+                        currentPomodoroSettingsContext.focusBackground = compressedUrl;
+                        applyPomodoroBackgrounds();
+                        showToast('专注背景已更新，请保存设置');
+                    } catch (error) {
+                        showToast('背景压缩失败');
+                    }
+                }
+            });
+
+            taskCardBgUpload?.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        const compressedUrl = await compressImage(file, { quality: 0.8, maxWidth: 800, maxHeight: 800 });
+                        db.pomodoroSettings.taskCardBackground = compressedUrl;
+                        await saveData();
+                        applyPomodoroBackgrounds();
+                        showToast('任务卡片背景已更新');
+                    } catch (error) {
+                        showToast('背景压缩失败');
+                    }
+                }
+            });
+        }
+
+        function loadSettingsToPomodoroSidebar(settings) {
+            const charSelect = document.getElementById('pomodoro-char-select');
+            const userPersonaSelect = document.getElementById('pomodoro-user-persona-select');
+
+            charSelect.innerHTML = '<option value="">不绑定</option>';
+            db.characters.forEach(char => {
+                const option = document.createElement('option');
+                option.value = char.id;
+                option.textContent = char.remarkName;
+                if (settings.boundCharId === char.id) {
+                    option.selected = true;
+                }
+                charSelect.appendChild(option);
+            });
+
+            userPersonaSelect.innerHTML = '<option value="">默认</option>';
+            (db.myPersonaPresets || []).forEach(preset => {
+                const option = document.createElement('option');
+                option.value = preset.name;
+                option.textContent = preset.name;
+                if (settings.userPersona === preset.name) {
+                    option.selected = true;
+                }
+                userPersonaSelect.appendChild(option);
+            });
+
+            document.getElementById('pomodoro-encouragement-minutes').value = settings.encouragementMinutes || 25;
+            document.getElementById('pomodoro-poke-limit').value = settings.pokeLimit || 5;
+            document.getElementById('pomodoro-focus-bg-url').value = settings.focusBackground || '';
+            document.getElementById('pomodoro-task-card-bg-url').value = settings.taskCardBackground || '';
+        }
+
+        async function savePomodoroSettingsFromSidebar(settings) {
+            const oldCharId = settings.boundCharId;
+            const newCharId = document.getElementById('pomodoro-char-select').value;
+
+            settings.boundCharId = newCharId;
+            settings.userPersona = document.getElementById('pomodoro-user-persona-select').value;
+            settings.encouragementMinutes = parseInt(document.getElementById('pomodoro-encouragement-minutes').value, 10) || 25;
+            settings.pokeLimit = parseInt(document.getElementById('pomodoro-poke-limit').value, 10) || 5;
+            settings.focusBackground = document.getElementById('pomodoro-focus-bg-url').value.trim();
+            settings.taskCardBackground = document.getElementById('pomodoro-task-card-bg-url').value.trim();
+            
+            await saveData();
+            applyPomodoroBackgrounds();
+
+            // Update avatar in focus screen if it's active
+            const focusAvatarEl = document.querySelector('#pomodoro-focus-screen .focus-avatar');
+            if (settings.boundCharId) {
+                const boundChar = db.characters.find(c => c.id === settings.boundCharId);
+                if (boundChar && focusAvatarEl) {
+                    focusAvatarEl.src = boundChar.avatar;
+                }
+            } else if (focusAvatarEl) {
+                focusAvatarEl.src = 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg'; // Fallback
+            }
+
+            // 新增：如果更换了角色，则清空对话框
+            if (oldCharId !== newCharId) {
+                const focusMessageBubble = document.querySelector('#pomodoro-focus-screen .focus-message-bubble');
+                if (focusMessageBubble) {
+                    focusMessageBubble.classList.remove('visible');
+                    focusMessageBubble.querySelector('p').textContent = '';
+                }
+            }
+
+            showToast('专注设置已保存');
+        }
+
+        function applyPomodoroBackgrounds() {
+            const focusScreen = document.getElementById('pomodoro-focus-screen');
+            
+            // Apply focus screen background from the CURRENT task if it exists
+            if (currentPomodoroTask && currentPomodoroTask.settings.focusBackground) {
+                focusScreen.style.backgroundImage = `url(${currentPomodoroTask.settings.focusBackground})`;
+                focusScreen.style.backgroundSize = 'cover';
+                focusScreen.style.backgroundPosition = 'center';
+            } else {
+                focusScreen.style.backgroundImage = 'none';
+            }
+
+            // Apply task card background from the GLOBAL default settings
+            const defaultSettings = db.pomodoroSettings || {};
+            const styleId = 'pomodoro-task-card-bg-style';
+            let styleElement = document.getElementById(styleId);
+
+            if (defaultSettings.taskCardBackground) {
+                if (!styleElement) {
+                    styleElement = document.createElement('style');
+                    styleElement.id = styleId;
+                    document.head.appendChild(styleElement);
+                }
+                styleElement.innerHTML = `
+                    #pomodoro-screen .task-card {
+                        background-image: url(${defaultSettings.taskCardBackground});
+                        background-size: cover;
+                        background-position: center;
+                    }
+                    #pomodoro-screen .task-card-info h4, #pomodoro-screen .task-card-info p {
+                        color: white;
+                        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+                    }
+                `;
+            } else {
+                if (styleElement) {
+                    styleElement.remove();
+                }
+            }
+        }
+
+        function setupPomodoroGlobalSettings() {
+            const settingsBtn = document.getElementById('pomodoro-settings-btn');
+            const sidebar = document.getElementById('pomodoro-global-settings-sidebar');
+            const linkBtn = document.getElementById('link-global-pomodoro-world-book-btn');
+            const modal = document.getElementById('global-pomodoro-world-book-selection-modal');
+            const selectionList = document.getElementById('global-pomodoro-world-book-selection-list');
+            const saveBtn = document.getElementById('save-global-pomodoro-world-book-selection-btn');
+
+            settingsBtn?.addEventListener('click', () => {
+                sidebar.classList.add('open');
+            });
+
+            linkBtn?.addEventListener('click', () => {
+                if (!db.pomodoroSettings) {
+                    db.pomodoroSettings = { globalWorldBookIds: [] };
+                }
+                const selectedIds = db.pomodoroSettings.globalWorldBookIds || [];
+                renderCategorizedWorldBookList(selectionList, db.worldBooks, selectedIds, 'global-pomodoro-wb-select');
+                modal.classList.add('visible');
+            });
+
+            saveBtn?.addEventListener('click', async () => {
+                const selectedIds = Array.from(selectionList.querySelectorAll('.item-checkbox:checked')).map(input => input.value);
+                if (!db.pomodoroSettings) {
+                    db.pomodoroSettings = {};
+                }
+                db.pomodoroSettings.globalWorldBookIds = selectedIds;
+                await saveData();
+                modal.classList.remove('visible');
+                showToast('全局专注世界书已更新');
+            });
+        }
 
         function setupMemoryJournalScreen() {
             const generateNewJournalBtn = document.getElementById('generate-new-journal-btn');
@@ -6830,7 +8932,9 @@ return Promise.resolve();
 
                 const response = await fetch(endpoint, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
                 if (!response.ok) {
-                    throw new Error(`API 错误: ${response.status} ${await response.text()}`);
+                    const error = new Error(`API 错误: ${response.status} ${await response.text()}`);
+                    error.response = response;
+                    throw error;
                 }
 
                 const result = await response.json();
@@ -6859,8 +8963,7 @@ return Promise.resolve();
                 showToast('新日记已生成！');
 
             } catch (error) {
-                console.error('生成日记失败:', error);
-                showToast(`生成失败: ${error.message}`);
+                showApiError(error);
             } finally {
                 isGenerating = false; // Reset the flag
             }
@@ -8216,26 +10319,37 @@ return Promise.resolve();
         let currentPageIndex = 0;
         function setupHomeScreen() {
             const getIcon = (id) => db.customIcons[id] || defaultIcons[id].url;
+            // Ensure insWidgetSettings exists with defaults
+            if (!db.insWidgetSettings) {
+                db.insWidgetSettings = {
+                    avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg',
+                    bubble1: '„- ω -„',
+                    avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg',
+                    bubble2: 'ｷ...✩'
+                };
+            }
+            const insWidget = db.insWidgetSettings;
+
             const homeScreenHTML = `
             <div class="home-screen-swiper">
                 <div class="home-screen-page">
                     <div class="home-widget-container">
                         <div class="central-circle" style="background-image: url('${db.homeWidgetSettings.centralCircleImage}');"></div>
-                        <div class="satellite-oval oval-top-left">
-                            <img src="${db.homeWidgetSettings.topLeft.imageUrl}" alt="">
-                            <span>${db.homeWidgetSettings.topLeft.text}</span>
+                        <div class="satellite-oval oval-top-left" data-widget-part="topLeft">
+                            <span class="satellite-emoji" contenteditable="true">${db.homeWidgetSettings.topLeft.emoji || '❤️'}</span>
+                            <span class="satellite-text" contenteditable="true">${db.homeWidgetSettings.topLeft.text}</span>
                         </div>
-                        <div class="satellite-oval oval-top-right">
-                            <img src="${db.homeWidgetSettings.topRight.imageUrl}" alt="">
-                            <span>${db.homeWidgetSettings.topRight.text}</span>
+                        <div class="satellite-oval oval-top-right" data-widget-part="topRight">
+                            <span class="satellite-emoji" contenteditable="true">${db.homeWidgetSettings.topRight.emoji || '🧡'}</span>
+                            <span class="satellite-text" contenteditable="true">${db.homeWidgetSettings.topRight.text}</span>
                         </div>
-                        <div class="satellite-oval oval-bottom-left">
-                            <img src="${db.homeWidgetSettings.bottomLeft.imageUrl}" alt="">
-                            <span>${db.homeWidgetSettings.bottomLeft.text}</span>
+                        <div class="satellite-oval oval-bottom-left" data-widget-part="bottomLeft">
+                            <span class="satellite-emoji" contenteditable="true">${db.homeWidgetSettings.bottomLeft.emoji || '💛'}</span>
+                            <span class="satellite-text" contenteditable="true">${db.homeWidgetSettings.bottomLeft.text}</span>
                         </div>
-                        <div class="satellite-oval oval-bottom-right">
-                            <img src="${db.homeWidgetSettings.bottomRight.imageUrl}" alt="">
-                            <span>${db.homeWidgetSettings.bottomRight.text}</span>
+                        <div class="satellite-oval oval-bottom-right" data-widget-part="bottomRight">
+                            <span class="satellite-emoji" contenteditable="true">${db.homeWidgetSettings.bottomRight.emoji || '💙'}</span>
+                            <span class="satellite-text" contenteditable="true">${db.homeWidgetSettings.bottomRight.text}</span>
                         </div>
 
 
@@ -8252,17 +10366,38 @@ return Promise.resolve();
                         </div>
                     </div>
                     <div class="app-grid">
+                        <div class="app-grid-widget-container">
+                           <div class="app-grid-widget">
+                                <div class="ins-widget">
+                                    <div class="ins-widget-row user">
+                                        <img src="${insWidget.avatar1}" alt="Character Avatar" class="ins-widget-avatar" id="ins-widget-avatar-1">
+                                        <div class="ins-widget-bubble" id="ins-widget-bubble-1" contenteditable="true">${insWidget.bubble1}</div>
+                                    </div>
+                                    <div class="ins-widget-divider"><span>୨୧</span></div>
+                                    <div class="ins-widget-row character">
+                                        <div class="ins-widget-bubble" id="ins-widget-bubble-2" contenteditable="true">${insWidget.bubble2}</div>
+                                        <img src="${insWidget.avatar2}" alt="User Avatar" class="ins-widget-avatar" id="ins-widget-avatar-2">
+                                    </div>
+                                </div>
+                           </div>
+                        </div>
                         <a href="#" class="app-icon" data-target="chat-list-screen"><img src="${getIcon('chat-list-screen')}" alt="404" class="icon-img"><span class="app-name">${defaultIcons['chat-list-screen'].name}</span></a>
                         <a href="#" class="app-icon" data-target="api-settings-screen"><img src="${getIcon('api-settings-screen')}" alt="API" class="icon-img"><span class="app-name">${defaultIcons['api-settings-screen'].name}</span></a>
                         <a href="#" class="app-icon" data-target="wallpaper-screen"><img src="${getIcon('wallpaper-screen')}" alt="Wallpaper" class="icon-img"><span class="app-name">${defaultIcons['wallpaper-screen'].name}</span></a>
                         <a href="#" class="app-icon" data-target="world-book-screen"><img src="${getIcon('world-book-screen')}" alt="World Book" class="icon-img"><span class="app-name">${defaultIcons['world-book-screen'].name}</span></a>
                         <a href="#" class="app-icon" data-target="customize-screen"><img src="${getIcon('customize-screen')}" alt="Customize" class="icon-img"><span class="app-name">${defaultIcons['customize-screen'].name}</span></a>
                         <a href="#" class="app-icon" data-target="tutorial-screen"><img src="${getIcon('tutorial-screen')}" alt="Tutorial" class="icon-img"><span class="app-name">${defaultIcons['tutorial-screen'].name}</span></a>
+                        <div class="heart-photo-widget"></div>
                     </div>
                 </div>
 
                 <div class="home-screen-page">
                      <div class="app-grid">
+                        <a href="#" class="app-icon" data-target="storage-analysis-screen"><img src="${getIcon('storage-analysis-screen')}" alt="存储分析" class="icon-img"><span class="app-name">${defaultIcons['storage-analysis-screen'].name}</span></a>
+                        <a href="#" class="app-icon" data-target="pomodoro-screen">
+                            <img src="${getIcon('pomodoro-screen')}" alt="番茄钟" class="icon-img">
+                            <span class="app-name">${defaultIcons['pomodoro-screen'].name}</span>
+                        </a>
                         <a href="#" class="app-icon" data-target="forum-screen">
                             <img src="${getIcon('forum-screen')}" alt="论坛" class="icon-img">
                             <span class="app-name">${defaultIcons['forum-screen'].name}</span>
@@ -8279,7 +10414,6 @@ return Promise.resolve();
                             <img src="${getIcon('piggy-bank-screen')}" alt="存钱罐" class="icon-img">
                             <span class="app-name">${defaultIcons['piggy-bank-screen'].name}</span>
                         </a>
-                        <a href="#" class="app-icon" data-target="storage-analysis-screen"><img src="${getIcon('storage-analysis-screen')}" alt="存储分析" class="icon-img"><span class="app-name">${defaultIcons['storage-analysis-screen'].name}</span></a>
                      </div>
                 </div>
 
@@ -8294,6 +10428,12 @@ return Promise.resolve();
                 <a href="#" class="app-icon" data-target="font-settings-screen"><img src="${getIcon('font-settings-screen')}" alt="字体" class="icon-img"></a>
             </div>`;
             homeScreen.innerHTML = homeScreenHTML;
+
+           const polaroidImage = db.homeWidgetSettings?.polaroidImage;
+           if (polaroidImage) {
+               updatePolaroidImage(polaroidImage);
+           }
+
             updateClock();
             applyWallpaper(db.wallpaper);
             applyHomeScreenMode(db.homeScreenMode);
@@ -8310,18 +10450,69 @@ return Promise.resolve();
             document.querySelector('[data-target="tutorial-screen"]').addEventListener('click', renderTutorialContent);
             updateBatteryStatus();
 
+            const homeWidgetContainer = homeScreen.querySelector('.home-widget-container');
+
+            // --- Central Circle Click ---
+            const centralCircle = homeWidgetContainer.querySelector('.central-circle');
+            if (centralCircle) {
+                centralCircle.addEventListener('click', () => {
+                    const modal = document.getElementById('ins-widget-avatar-modal');
+                    const form = document.getElementById('ins-widget-avatar-form');
+                    const preview = document.getElementById('ins-widget-avatar-preview');
+                    const urlInput = document.getElementById('ins-widget-avatar-url-input');
+                    const fileUpload = document.getElementById('ins-widget-avatar-file-upload');
+                    const targetInput = document.getElementById('ins-widget-avatar-target');
+
+                    targetInput.value = 'centralCircle'; // Special target
+                    preview.style.backgroundImage = `url("${db.homeWidgetSettings.centralCircleImage}")`;
+                    preview.innerHTML = '';
+                    urlInput.value = '';
+                    fileUpload.value = null;
+                    modal.classList.add('visible');
+                });
+            }
+
+            // --- Blur to Save Logic ---
+            if (homeWidgetContainer) {
+                homeWidgetContainer.addEventListener('blur', async (e) => {
+                    const target = e.target;
+                    if (target.hasAttribute('contenteditable')) {
+                        const oval = target.closest('.satellite-oval');
+                        if (oval) { // It's one of the satellite ovals
+                            const part = oval.dataset.widgetPart;
+                            const prop = target.classList.contains('satellite-emoji') ? 'emoji' : 'text';
+                            const newValue = target.textContent.trim();
+
+                            if (db.homeWidgetSettings[part] && db.homeWidgetSettings[part][prop] !== newValue) {
+                                db.homeWidgetSettings[part][prop] = newValue;
+                                await saveData();
+                                showToast('小组件已更新');
+                            }
+                        } else if (target.id === 'widget-signature') { // It's the signature
+                            const newSignature = target.textContent.trim();
+                            if (db.homeSignature !== newSignature) {
+                                db.homeSignature = newSignature;
+                                await saveData();
+                                showToast('签名已保存');
+                            }
+                        } else if (target.id === 'ins-widget-bubble-1' || target.id === 'ins-widget-bubble-2') { // It's the INS widget
+                             const bubbleId = target.id === 'ins-widget-bubble-1' ? 'bubble1' : 'bubble2';
+                             const newText = target.textContent.trim();
+                             if (db.insWidgetSettings[bubbleId] !== newText) {
+                                 db.insWidgetSettings[bubbleId] = newText;
+                                 await saveData();
+                                 showToast('小组件文字已保存');
+                             }
+                        }
+                    }
+                }, true); // Use capture phase
+            }
+            
             const signatureWidget = document.getElementById('widget-signature');
             if (signatureWidget) {
                 signatureWidget.textContent = db.homeSignature || '';
-                signatureWidget.addEventListener('blur', async (e) => {
-                    const newSignature = e.target.textContent.trim();
-                    if (db.homeSignature !== newSignature) {
-                        db.homeSignature = newSignature;
-                        await saveData();
-                        showToast('签名已保存');
-                    }
-                });
             }
+
 
             // --- Home Screen Swipe Logic ---
             const swiper = homeScreen.querySelector('.home-screen-swiper');
@@ -8338,7 +10529,7 @@ return Promise.resolve();
 
             // --- Touch Events ---
             homeScreen.addEventListener('touchstart', (e) => {
-                if (e.target.closest('a') || e.target.closest('#widget-signature')) return;
+                if (e.target.closest('a') || e.target.closest('[contenteditable]')) return;
                 isDragging = true;
                 touchStartX = e.changedTouches[0].screenX;
                 touchEndX = e.changedTouches[0].screenX; // Reset on start
@@ -8357,7 +10548,7 @@ return Promise.resolve();
 
             // --- Mouse Events ---
             homeScreen.addEventListener('mousedown', (e) => {
-                if (e.target.closest('a') || e.target.closest('#widget-signature')) return;
+                if (e.target.closest('a') || e.target.closest('[contenteditable]')) return;
                 e.preventDefault();
                 isDragging = true;
                 touchStartX = e.screenX;
@@ -8410,13 +10601,29 @@ return Promise.resolve();
                 touchEndX = 0;
             }
 
-            // 新增：处理签名失焦的逻辑
+            // 新增：处理失焦的逻辑
             homeScreen.addEventListener('click', (e) => {
-                const signatureWidget = document.getElementById('widget-signature');
-                // 如果点击的目标不是签名框，并且签名框当前是激活编辑状态
-                if (e.target !== signatureWidget && document.activeElement === signatureWidget) {
-                    signatureWidget.blur(); // 手动触发失焦
+                const activeEl = document.activeElement;
+                if (activeEl && activeEl.hasAttribute('contenteditable') && e.target !== activeEl) {
+                    activeEl.blur();
                 }
+            });
+
+            // 新增：限制emoji小组件只能输入一个字符
+            homeScreen.querySelectorAll('.satellite-emoji').forEach(span => {
+                span.addEventListener('input', (e) => {
+                    const chars = [...e.target.textContent];
+                    if (chars.length > 1) {
+                        e.target.textContent = chars[0];
+                        // 重新聚焦并把光标移动到末尾
+                        const range = document.createRange();
+                        const sel = window.getSelection();
+                        range.selectNodeContents(e.target);
+                        range.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                });
             });
         }
 
@@ -8487,6 +10694,17 @@ return Promise.resolve();
                         showToast('小部件已恢复默认');
                     }
                 }
+
+                // --- 新增：处理重置小部件的逻辑 ---
+                if (e.target.matches('#reset-widget-btn')) {
+                    if (confirm('确定要将小部件恢复为默认设置吗？')) {
+                        db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
+                        await saveData();
+                        renderCustomizeForm(); // 重新渲染自定义页
+                        setupHomeScreen(); // 刷新主页
+                        showToast('小部件已恢复默认');
+                    }
+                }
             });
 
          customizeForm.addEventListener('change', async (e) => {
@@ -8530,7 +10748,7 @@ return Promise.resolve();
             const iconOrder = [
                 'chat-list-screen', 'api-settings-screen', 'wallpaper-screen',
                 'world-book-screen', 'customize-screen', 'tutorial-screen',
-                'font-settings-screen', 'day-mode-btn', 'night-mode-btn', 'forum-screen', 'music-screen', 'diary-screen', 'piggy-bank-screen'
+                'font-settings-screen', 'day-mode-btn', 'night-mode-btn', 'forum-screen', 'music-screen', 'diary-screen', 'piggy-bank-screen', 'pomodoro-screen', 'storage-analysis-screen'
             ];
 
             let iconsContentHTML = '';
@@ -8562,7 +10780,6 @@ return Promise.resolve();
             customizeForm.insertAdjacentHTML('beforeend', iconsSectionHTML);
 
             // --- 2. 主页小部件自定义部分 ---
-            const widgetSettings = db.homeWidgetSettings || defaultWidgetSettings;
             const widgetSectionHTML = `
             <div class="collapsible-section">
                 <div class="collapsible-header">
@@ -8570,44 +10787,9 @@ return Promise.resolve();
                     <span class="collapsible-arrow">▼</span>
                 </div>
                 <div class="collapsible-content">
+                    <p style="font-size: 14px; color: #666; margin-bottom: 20px; text-align: center;">主屏幕上的小组件内容可以直接点击编辑，失焦后自动保存。<br>中央头像则是在主屏幕点击后弹窗更换。</p>
                     <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
-                        <button type="button" id="reset-widget-btn" class="btn btn-neutral btn-small">恢复默认</button>
-                    </div>
-                    <div class="form-group">
-                        <label>中心圆圈图片URL</label>
-                        <input type="url" class="form-group" placeholder="粘贴图片URL" value="${widgetSettings.centralCircleImage}" data-widget-part="centralCircleImage" id="widget-input-centralCircleImage">
-                        <input type="file" id="widget-upload-centralCircleImage" data-widget-target="centralCircleImage" class="widget-upload-input" accept="image/*" style="display:none;">
-                        <label for="widget-upload-centralCircleImage" class="btn btn-secondary btn-small" style="margin-top: 5px;">本地上传</label>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-                        <div>
-                            <div class="form-group"><label>左上角文字</label><input type="text" class="form-group" value="${widgetSettings.topLeft.text}" data-widget-part="topLeft" data-widget-prop="text"></div>
-                            <div class="form-group"><label>左上角图片URL</label><input type="url" class="form-group" value="${widgetSettings.topLeft.imageUrl}" data-widget-part="topLeft" data-widget-prop="imageUrl" id="widget-input-topLeft-imageUrl">
-                                <input type="file" id="widget-upload-topLeft-imageUrl" data-widget-target="topLeft" data-widget-prop="imageUrl" class="widget-upload-input" accept="image/*" style="display:none;">
-                                <label for="widget-upload-topLeft-imageUrl" class="btn btn-secondary btn-small" style="margin-top: 5px;">本地上传</label>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group"><label>右上角文字</label><input type="text" class="form-group" value="${widgetSettings.topRight.text}" data-widget-part="topRight" data-widget-prop="text"></div>
-                            <div class="form-group"><label>右上角图片URL</label><input type="url" class="form-group" value="${widgetSettings.topRight.imageUrl}" data-widget-part="topRight" data-widget-prop="imageUrl" id="widget-input-topRight-imageUrl">
-                                <input type="file" id="widget-upload-topRight-imageUrl" data-widget-target="topRight" data-widget-prop="imageUrl" class="widget-upload-input" accept="image/*" style="display:none;">
-                                <label for="widget-upload-topRight-imageUrl" class="btn btn-secondary btn-small" style="margin-top: 5px;">本地上传</label>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group"><label>左下角文字</label><input type="text" class="form-group" value="${widgetSettings.bottomLeft.text}" data-widget-part="bottomLeft" data-widget-prop="text"></div>
-                            <div class="form-group"><label>左下角图片URL</label><input type="url" class="form-group" value="${widgetSettings.bottomLeft.imageUrl}" data-widget-part="bottomLeft" data-widget-prop="imageUrl" id="widget-input-bottomLeft-imageUrl">
-                                <input type="file" id="widget-upload-bottomLeft-imageUrl" data-widget-target="bottomLeft" data-widget-prop="imageUrl" class="widget-upload-input" accept="image/*" style="display:none;">
-                                <label for="widget-upload-bottomLeft-imageUrl" class="btn btn-secondary btn-small" style="margin-top: 5px;">本地上传</label>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group"><label>右下角文字</label><input type="text" class="form-group" value="${widgetSettings.bottomRight.text}" data-widget-part="bottomRight" data-widget-prop="text"></div>
-                            <div class="form-group"><label>右下角图片URL</label><input type="url" class="form-group" value="${widgetSettings.bottomRight.imageUrl}" data-widget-part="bottomRight" data-widget-prop="imageUrl" id="widget-input-bottomRight-imageUrl">
-                                <input type="file" id="widget-upload-bottomRight-imageUrl" data-widget-target="bottomRight" data-widget-prop="imageUrl" class="widget-upload-input" accept="image/*" style="display:none;">
-                                <label for="widget-upload-bottomRight-imageUrl" class="btn btn-secondary btn-small" style="margin-top: 5px;">本地上传</label>
-                            </div>
-                        </div>
+                         <button type="button" id="reset-widget-btn" class="btn btn-neutral btn-small">恢复默认</button>
                     </div>
                 </div>
             </div>
@@ -8666,7 +10848,7 @@ return Promise.resolve();
                     const newCss = globalCssTextarea.value;
                     db.globalCss = newCss;
                     applyGlobalCss(newCss);
-                    await dataStorage.saveData('globalCss', newCss);
+                    await saveData();
                     showToast('全局样式已应用');
                 });
             }
@@ -8681,7 +10863,7 @@ return Promise.resolve();
                         globalCssTextarea.value = preset.css;
                         db.globalCss = preset.css;
                         applyGlobalCss(preset.css);
-                        dataStorage.saveData('globalCss', preset.css);
+                        saveData();
                         showToast('全局CSS预设已应用');
                     }
                 });
@@ -8700,7 +10882,7 @@ return Promise.resolve();
                     } else {
                         db.globalCssPresets.push({ name, css });
                     }
-                    dataStorage.saveData('globalCssPresets', db.globalCssPresets);
+                    saveData();
                     populateGlobalCssPresetSelect();
                     showToast('全局CSS预设已保存');
                 });
@@ -8903,19 +11085,13 @@ return Promise.resolve();
                 action: async () => {
                     if (confirm(`确定要删除与“${itemName}”的聊天记录吗？此操作不可恢复。`)) {
                         if (chatType === 'private') {
-                            // 从数据库中删除角色数据和消息历史
-                            await dataStorage.removeData(`character_${chatId}`);
-                            await dataStorage.clearChatMessages(chatId, 'private');
-                            // 从内存中移除
+                            await dexieDB.characters.delete(chatId);
                             db.characters = db.characters.filter(c => c.id !== chatId);
                         } else {
-                            // 从数据库中删除群组数据和消息历史
-                            await dataStorage.removeData(`group_${chatId}`);
-                            await dataStorage.clearChatMessages(chatId, 'group');
-                            // 从内存中移除
+                            await dexieDB.groups.delete(chatId);
                             db.groups = db.groups.filter(g => g.id !== chatId);
                         }
-                        await saveData(); // 保存更改后的角色/群组列表
+                        // No need to call saveData() as we've directly manipulated the DB and in-memory object.
                         renderChatList();
                         showToast('聊天已删除');
                     }
@@ -9081,20 +11257,13 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                 renderChatList();
                 addCharModal.classList.remove('visible');
                 showToast(`角色“${newChar.remarkName}”创建成功！`);
+                promptForBackupIfNeeded('new_char');
             });
         }
 
         function setupChatRoom() {
             const placeholderPlusBtn = document.getElementById('placeholder-plus-btn');
             const chatExpansionPanel = document.getElementById('chat-expansion-panel');
-            const exitDirectorModeBtn = document.getElementById('exit-director-mode-btn');
-            const continuePlotBtn = document.getElementById('director-continue-plot-btn');
-
-            exitDirectorModeBtn.addEventListener('click', toggleDirectorMode);
-
-            continuePlotBtn.addEventListener('click', () => {
-               executeDirectorCommand("继续剧情");
-            });
 
             placeholderPlusBtn.addEventListener('click', () => {
                 // Hide sticker modal if open
@@ -9218,9 +11387,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
 
             // 如果消息未被撤回，则显示正常菜单
             if (!isWithdrawn) {
-                const canBeEdited = !isImageRecognitionMsg && !isVoiceMessage && !isPhotoVideoMessage && !isTransferMessage && !isGiftMessage && !isInvisibleMessage;
-
-                if (canBeEdited || isStickerMessage) {
+                if (!isImageRecognitionMsg && !isVoiceMessage && !isStickerMessage && !isPhotoVideoMessage && !isTransferMessage && !isGiftMessage && !isInvisibleMessage) {
                     menuItems.push({label: '编辑', action: () => startMessageEdit(messageId)});
                 }
                 
@@ -9308,17 +11475,14 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
 const message = chat.history.find(m => m.id === messageId);
 if (!message) return;
 
+// --- 从这里开始是替换后的新代码 ---
 let contentToEdit = message.content;
-const isStickerMessage = /\[.*?的表情包：.*?\]|\[.*?发送的表情包：.*?\]/.test(contentToEdit);
-
-// If it's NOT a sticker, then strip the brackets. Otherwise, show the full content.
-if (!isStickerMessage) {
-    const plainTextMatch = contentToEdit.match(/^\[.*?：([\s\S]*)\]$/);
-    if (plainTextMatch && plainTextMatch[1]) {
-        contentToEdit = plainTextMatch[1].trim();
-    }
-    contentToEdit = contentToEdit.replace(/\[发送时间:.*?\]/g, '').trim();
+const plainTextMatch = contentToEdit.match(/^\[.*?：([\s\S]*)\]$/);
+if (plainTextMatch && plainTextMatch[1]) {
+    contentToEdit = plainTextMatch[1].trim();
 }
+// --- 到这里结束 ---
+contentToEdit = contentToEdit.replace(/\[发送时间:.*?\]/g, '').trim(); // <--- 加上这一行
 messageEditInput.value = contentToEdit;
 
             messageInputDefault.style.display = 'none';
@@ -9333,26 +11497,20 @@ messageEditInput.value = contentToEdit;
            // ...
 const newTextRaw = messageEditInput.value.trim();
 if (newTextRaw) {
-    const originalMessage = chat.history[messageIndex];
-    // Re-check if the *original* message was a sticker to decide the save logic
-    const wasStickerMessage = /\[.*?的表情包：.*?\]|\[.*?发送的表情包：.*?\]/.test(originalMessage.content);
+    let newText = newTextRaw; // 先把干净的文字存起来
 
+
+
+
+    const oldContent = chat.history[messageIndex].content;
+    const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
     let newContent;
 
-    if (wasStickerMessage) {
-        // If editing a sticker, save the raw input. This allows fixing format errors.
-        newContent = newTextRaw;
+    if (prefixMatch && prefixMatch[1]) {
+        const prefix = prefixMatch[1];
+        newContent = `${prefix}${newText}]`;
     } else {
-        // For regular text messages, reconstruct the message with the prefix.
-        const oldContent = originalMessage.content;
-        const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
-        if (prefixMatch && prefixMatch[1]) {
-            const prefix = prefixMatch[1];
-            newContent = `${prefix}${newTextRaw}]`;
-        } else {
-            // Fallback for messages that don't have the standard prefix.
-            newContent = newTextRaw;
-        }
+        newContent = newTextRaw;
     }
 
     chat.history[messageIndex].content = newContent;
@@ -9360,11 +11518,11 @@ if (newTextRaw) {
     if (chat.history[messageIndex].parts) {
         chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
     }
-    await saveData();
-    currentPage = 1;
-    renderMessages(false, true);
-    renderChatList();
-}
+                await saveData();
+                currentPage = 1;
+                renderMessages(false, true);
+                renderChatList();
+            }
             cancelMessageEdit();
         }
 
@@ -9505,7 +11663,7 @@ if (newTextRaw) {
 
         function createMessageBubbleElement(message) {
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-            const {role, content, timestamp, id, transferStatus, giftStatus, stickerData, senderId, quote, isWithdrawn, originalContent, type} = message;
+            const {role, content, timestamp, id, transferStatus, giftStatus, stickerData, senderId, quote, isWithdrawn, originalContent} = message;
 
             const wrapper = document.createElement('div');
             wrapper.dataset.id = id;
@@ -9539,29 +11697,12 @@ if (newTextRaw) {
             const timeSkipMatch = content.match(timeSkipRegex);
             const inviteMatch = content.match(inviteRegex);
             const renameMatch = content.match(renameRegex);
-            const isDirectorCommand = type === 'director_command';
             const invisibleRegex = /\[.*?(?:接收|退回).*?的转账\]|\[.*?更新状态为：.*?\]|\[.*?已接收礼物\]|\[system:.*?\]|\[系统情景通知：.*?\]/;
             if (invisibleRegex.test(content)) {
                 return null;
             }
 
-            if (isDirectorCommand) {
-                wrapper.className = 'message-wrapper system-notification';
-                const commandText = content.replace('[system-display:🎬 导演指令：', '').replace(']', '');
-                const timeString = new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-                wrapper.innerHTML = `
-                    <div class="director-command-bubble">
-                        <div class="director-command-timestamp" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
-                            ${timeString}
-                        </div>
-                        <div class="director-command-content" style="display: none;">
-                            🎬 导演指令：${commandText}
-                        </div>
-                    </div>
-                `;
-                return wrapper;
-            } else if (timeSkipMatch || inviteMatch || renameMatch) {
+            if (timeSkipMatch || inviteMatch || renameMatch) {
                 wrapper.className = 'message-wrapper system-notification';
                 let bubbleText = '';
                 if (timeSkipMatch) bubbleText = timeSkipMatch[1];
@@ -9628,22 +11769,49 @@ if (newTextRaw) {
             const groupGiftMatch = content.match(groupGiftRegex);
             const imageRecogMatch = content.match(imageRecogRegex);
             const textMatch = content.match(textRegex);
+            const pomodoroRecordRegex = /\[pomodoro-record:([\s\S]+)\]/;
+            const pomodoroMatch = content.match(pomodoroRecordRegex);
 
-
-
-            if ((isSent && sentStickerMatch && stickerData) || (receivedStickerMatch)) {
+            if (pomodoroMatch) {
+                try {
+                    const data = JSON.parse(pomodoroMatch[1]);
+                    bubbleElement = document.createElement('div');
+                    bubbleElement.className = 'pomodoro-record-card';
+                    bubbleElement.dataset.details = pomodoroMatch[1]; // Store details for click event
+                    bubbleElement.innerHTML = `
+                        <div class="pomodoro-record-header">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20M16.24 7.76C15.07 6.58 13.53 6 12 6V12L7.76 16.24C10.1 18.58 13.9 18.58 16.24 16.24C18.58 13.9 18.58 10.1 16.24 7.76Z"></path></svg>
+                            <span class="title">专注记录</span>
+                        </div>
+                        <div class="pomodoro-record-body">
+                            <p class="task-name">${data.taskName}</p>
+                        </div>
+                    `;
+                    bubbleElement.addEventListener('click', () => {
+                        const detailModal = document.getElementById('pomodoro-record-detail-modal');
+                        const details = JSON.parse(bubbleElement.dataset.details);
+                        document.getElementById('detail-task-name').textContent = details.taskName;
+                        document.getElementById('detail-duration').textContent = details.duration;
+                        document.getElementById('detail-poke-count').textContent = details.pokeCount;
+                        detailModal.classList.add('visible');
+                    });
+                } catch (e) {
+                    bubbleElement = document.createElement('div');
+                    bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
+                    bubbleElement.textContent = content;
+                }
+            } else if ((isSent && sentStickerMatch && stickerData) || (!isSent && receivedStickerMatch)) {
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = 'image-bubble';
                 let stickerSrc = '';
 
-                if (isSent && stickerData) {
+                if (isSent) {
                     // 如果是你自己发的表情包，直接使用数据
                     stickerSrc = stickerData;
                 } else {
-                    // 如果是AI发的表情包（包括导演模式下扮演用户），我们需要处理路径
-                    const rawValue = receivedStickerMatch[1].trim();
-                    console.log('【调试】AI返回的原始表情包值:', rawValue); // <-- 调试日志1
-                    let finalPath;
+                    // 如果是AI发的表情包，我们需要处理路径
+                    // 原始路径，例如："害羞vHLfrV3K/1.jpg"
+                            // --- 这是实现您新需求的修改 ---
 
                     // 1. 检查当前角色的世界书是否包含 'catbox' 关键词
                     let useCatbox = false;
@@ -9653,30 +11821,40 @@ if (newTextRaw) {
                             .filter(Boolean)
                             .map(wb => wb.content)
                             .join(' ');
+
                         if (worldBookContent.toLowerCase().includes('catbox')) {
                             useCatbox = true;
                         }
                     }
 
-                    // 2. 根据图床类型，使用不同的正则提取路径
+                    // 2. 根据检查结果，选择图床前缀
+                    const imageHost = useCatbox ? 'https://files.catbox.moe/' : 'https://i.postimg.cc/';
+
+                   // 3. 从AI回复中获取原始路径
+                    const rawPath = receivedStickerMatch[1].trim();
+        
+                                        // 4. 关键: 根据图床选择不同的路径处理方式
+                    let finalPath;
                     if (useCatbox) {
+                        // 对于 Catbox，AI返回 "情绪+文件名" (例如 "焦虑2a9wte.jpeg")
+                        // 我们需要用正则从中提取出真正的文件名 (例如 "2a9wte.jpeg")
                         const catboxFileRegex = /[a-z0-9]+\.(jpeg|png|gif|jpg)$/i;
-                        const pathMatch = rawValue.match(catboxFileRegex);
-                        finalPath = pathMatch ? pathMatch[0] : rawValue; // 优先使用匹配到的文件名
-                        stickerSrc = `https://files.catbox.moe/${finalPath}`;
+                        const pathMatch = rawPath.match(catboxFileRegex);
+                        
+                        if (pathMatch) {
+                            finalPath = pathMatch[0]; // 使用匹配到的文件名
+                        } else {
+                            finalPath = rawPath; // 作为备用方案，如果正则没匹配上
+                        }
                     } else {
-                        // 为 postimg 等其他图床设计的通用正则，提取路径部分
-                        const generalPathRegex = /([a-zA-Z0-9\-_/]+\.(?:jpg|jpeg|png|gif|webp))$/;
-                        const pathMatch = rawValue.match(generalPathRegex);
-                        finalPath = pathMatch ? pathMatch[1] : rawValue; // 优先使用匹配到的路径
-                        stickerSrc = `https://i.postimg.cc/${finalPath}`;
+                        // 对于 postimg 等其他图床，保留原有的提取逻辑
+                        const pathExtractionRegex = /[a-zA-Z0-9]+\/.*$/;
+                        const extractedPathMatch = rawPath.match(pathExtractionRegex);
+                        finalPath = extractedPathMatch ? extractedPathMatch[0] : rawPath;
                     }
 
-                    // 3. 最终检查：如果提取出的路径本身就是完整URL（例如在正则匹配失败时），则直接使用
-                    if (finalPath.startsWith('http')) {
-                        stickerSrc = finalPath;
-                    }
-                    console.log('【调试】最终生成的表情包URL:', stickerSrc); // <-- 调试日志2
+                    // 5. 拼接最终URL
+                    stickerSrc = `${imageHost}${finalPath}`;
                 }
 
                 bubbleElement.innerHTML = `<img src="${stickerSrc}" alt="表情包">`;
@@ -9782,33 +11960,52 @@ if (newTextRaw) {
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = 'image-bubble';
                 bubbleElement.innerHTML = `<img src="${content}" alt="图片消息">`;
-            } else if (textMatch) {
+            } else { // Handles text, HTML, and unrecognized formats
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
-                let userText = textMatch[1].trim().replace(/\[发送时间:.*?\]/g, '').trim();
-                // 使用 DOMPurify 清理和渲染 HTML
-                bubbleElement.innerHTML = DOMPurify.sanitize(userText);
-                if (!chat.useCustomBubbleCss) {
-                    bubbleElement.style.backgroundColor = bubbleTheme.bg;
-                    bubbleElement.style.color = bubbleTheme.text;
-                }
-            } else if (message && Array.isArray(message.parts) && message.parts[0].type === 'html') {
-                bubbleElement = document.createElement('div');
-                bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
-                // 使用 DOMPurify 清理和渲染 HTML
-                bubbleElement.innerHTML = DOMPurify.sanitize(message.parts[0].text);
-            } else {
-                bubbleElement = document.createElement('div');
-                bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
-                let displayedContent = content;
-                const plainTextMatch = content.match(/^\[.*?：([\s\S]*)\]$/);
-                if (plainTextMatch && plainTextMatch[1]) {
-                    displayedContent = plainTextMatch[1].trim();
-                }
-                displayedContent = displayedContent.replace(/\[发送时间:.*?\]/g, '').trim();
+                
+                let contentToRender = content;
 
-                // 默认使用 DOMPurify 清理和渲染所有内容
-                bubbleElement.innerHTML = DOMPurify.sanitize(displayedContent);
+                // If it's a structured message like "[Sender: Message]", extract the core message.
+                const textMatch = content.match(/\[(?:.+?)的消息：([\s\S]+?)\]/);
+                if (textMatch && textMatch[1]) {
+                    contentToRender = textMatch[1].trim();
+                }
+                // Also handle the generic case if the specific "的消息" isn't there
+                else {
+                    const genericMatch = content.match(/^\[.*?：([\s\S]*)\]$/);
+                    if (genericMatch && genericMatch[1]) {
+                        contentToRender = genericMatch[1].trim();
+                    }
+                }
+
+                // Clean up any lingering timestamps
+                contentToRender = contentToRender.replace(/\[发送时间:.*?\]/g, '').trim();
+
+                // --- NEW LOGIC ---
+                // Check if the content is likely HTML (contains tags)
+                const isHtml = /<[a-z][\s\S]*>/i.test(contentToRender);
+                let finalContent = contentToRender;
+
+                if (isHtml) {
+                    // 1. Make IDs unique to prevent conflicts
+                    finalContent = contentToRender.replace(/(id|for)="([^"]+)"/g, (match, attr, value) => {
+                        return `${attr}="${value}-${message.id}"`;
+                    });
+                    
+                    // Also need to update CSS selectors that use the ID
+                    finalContent = finalContent.replace(/#([^"\s,{>.:;!]+)/g, (match, id) => {
+                        return `#${id}-${message.id}`;
+                    });
+
+                    // 2. Sanitize, allowing style tags
+                    finalContent = DOMPurify.sanitize(finalContent, { ADD_TAGS: ['style'] });
+                } else {
+                    // For plain text, just sanitize as before
+                    finalContent = DOMPurify.sanitize(contentToRender);
+                }
+
+                bubbleElement.innerHTML = finalContent;
 
                 if (!chat.useCustomBubbleCss) {
                     bubbleElement.style.backgroundColor = bubbleTheme.bg;
@@ -9973,44 +12170,8 @@ if (newTextRaw) {
         async function sendMessage() {
     const text = messageInput.value.trim();
     if (!text || isGenerating) return;
-
-    const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-    if (!chat) return;
-
-    // Director Mode Logic
-    if (isDirectorMode) {
-        // 1. Display the command for user reference
-        const displayMessage = {
-            id: `msg_director_cmd_${Date.now()}`,
-            role: 'system',
-            type: 'director_command', // Add a type for easy identification
-            content: `[system-display:🎬 导演指令：${text}]`,
-            parts: [],
-            timestamp: Date.now()
-        };
-        chat.history.push(displayMessage);
-        addMessageBubble(displayMessage, currentChatId, currentChatType);
-
-        // 2. Save the command to history for AI context
-        const contextMessage = {
-            id: `msg_director_ctx_${Date.now()}`,
-            role: 'user', // Treat as user input for context
-            content: `[system: 导演指令： ${text}]`,
-            parts: [{ type: 'text', text: `[system: 导演指令： ${text}]` }],
-            timestamp: Date.now()
-        };
-        if (currentChatType === 'group') {
-            contextMessage.senderId = 'user_me';
-        }
-        chat.history.push(contextMessage);
-        
-        await saveData();
-        messageInput.value = '';
-        renderChatList();
-        return;
-    }
-
     messageInput.value = ''; // Clear input immediately for better UX
+    const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
 
     // --- 时间感知功能注入点 开始 ---
 if (db.apiSettings && db.apiSettings.timePerceptionEnabled) {
@@ -10106,6 +12267,11 @@ if (currentChatType === 'group') {
 }
 chat.history.push(message);
 addMessageBubble(message, currentChatId, currentChatType);
+
+if (chat.history.length > 0 && chat.history.length % 100 === 0) {
+    promptForBackupIfNeeded('history_milestone');
+}
+
 await saveData();
 renderChatList();
 
@@ -10398,11 +12564,6 @@ return `${seconds}秒`;
             const expansionGrid = document.getElementById('chat-expansion-grid');
             const expansionItems = [
                 {
-                    id: 'director-mode',
-                    name: '导演模式',
-                    icon: '🎬'
-                },
-                {
                     id: 'memory-journal',
                     name: '回忆日记',
                     icon: `<svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,13.09C11.67,13.03 11.34,13 11,13A3,3 0 0,0 8,16A3,3 0 0,0 11,19C12.36,19 13.5,18.15 13.91,17H16V15H13.91C13.5,13.85 12.36,13.09 12,13.09M11,17A1,1 0 0,1 10,16A1,1 0 0,1 11,15A1,1 0 0,1 12,16A1,1 0 0,1 11,17Z" /></svg>`
@@ -10419,9 +12580,8 @@ return `${seconds}秒`;
                 const itemEl = document.createElement('div');
                 itemEl.className = 'expansion-item';
                 itemEl.dataset.action = item.id;
-                const isSvg = item.icon.trim().startsWith('<svg');
                 itemEl.innerHTML = `
-                    <div class="expansion-item-icon" style="${isSvg ? '' : 'font-size: 32px;'}">${item.icon}</div>
+                    <div class="expansion-item-icon">${item.icon}</div>
                     <span class="expansion-item-name">${item.name}</span>
                 `;
                 expansionGrid.appendChild(itemEl);
@@ -10433,9 +12593,6 @@ return `${seconds}秒`;
 
                 const action = item.dataset.action;
                 switch (action) {
-                    case 'director-mode':
-                        toggleDirectorMode();
-                        break;
                     case 'memory-journal':
                         // 跳转到回忆日记界面
                         renderJournalList();
@@ -10623,6 +12780,74 @@ return `${seconds}秒`;
                 i = endOfText;
             }
             return results;
+
+        // ==================================================================================================================
+        // ========================================== 错误处理翻译官 (Error Translator) ==========================================
+        // ==================================================================================================================
+
+        /**
+         * 我们的“错误词典”，负责将技术性错误翻译成用户友好的提示。
+         * @param {Error} error - 捕获到的错误对象。
+         * @returns {string} - 返回一句通俗易懂的错误提示。
+         */
+        function getFriendlyErrorMessage(error) {
+            // 检查 fetch 的 AbortError，这通常用于实现请求超时
+            if (error.name === 'AbortError') {
+                return '请求超时了，请检查您的网络或稍后再试。';
+            }
+
+            // 检查 JSON 解析错误，这对应您说的“返回格式错误”
+            if (error instanceof SyntaxError) {
+                return '服务器返回的数据格式不对，建议您点击“重回”按钮再试一次。';
+            }
+
+            // 检查服务器有响应、但HTTP状态码是失败的情况 (如 429, 504)
+            if (error.response) {
+                const status = error.response.status;
+                switch (status) {
+                    case 429:
+                        return '您点的太快啦，请稍等一下再试。';
+                    case 504:
+                        return '服务器有点忙，响应不过来了，请稍后再试。';
+                    case 500:
+                        return '服务器内部出错了，他们应该正在修复。';
+                    case 401:
+                        return 'API密钥好像不对或者过期了，请检查一下设置。';
+                    case 404:
+                        return '请求的API地址找不到了，请检查一下设置。';
+                    default:
+                        // 对于其他未预设的HTTP错误，给一个通用提示
+                        return `服务器返回了一个错误 (代码: ${status})，请稍后再试。`;
+                }
+            }
+
+            // 检查通用的网络错误 (例如，断网了，fetch自己就会报TypeError)
+            if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                return '网络连接好像出问题了，请检查一下网络。';
+            }
+
+            // 对于所有其他未知错误，显示原始信息，方便排查
+            return `发生了一个未知错误：${error.message}`;
+        }
+
+        /**
+         * 统一的API错误显示函数。
+         * @param {Error} error - 捕获到的错误对象。
+         */
+        function showApiError(error) {
+            // 在控制台打印详细错误，方便您自己调试
+            console.error("API Error Detected:", error);
+            
+            // 获取翻译后的友好提示
+            const friendlyMessage = getFriendlyErrorMessage(error);
+            
+            // 使用您项目中已有的 showToast 函数来显示提示
+            showToast(friendlyMessage);
+        }
+
+        // ==================================================================================================================
+        // ========================================== END Error Translator ==================================================
+        // ==================================================================================================================
         }
 
         // --- AI Interaction & Prompts ---
@@ -10769,20 +12994,6 @@ return `${seconds}秒`;
         }
 
         async function getAiReply(chatId, chatType) {
-            if (isDirectorMode) {
-                const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-                if (!chat) return;
-                const lastCommand = chat.history.slice().reverse().find(m => m.content.startsWith('[system: 导演指令：'));
-                if (lastCommand) {
-                    const commandTextMatch = lastCommand.content.match(/\[system: 导演指令： ([\s\S]*)\]/);
-                    if (commandTextMatch && commandTextMatch[1]) {
-                        executeDirectorCommand(commandTextMatch[1]);
-                        return;
-                    }
-                }
-                showToast('请先使用发送按钮（➤）提交一条导演指令。');
-                return;
-            }
             if (isGenerating) return;
             const {url, key, model, provider} = db.apiSettings;
             if (!url || !key || !model) {
@@ -10875,11 +13086,14 @@ return `${seconds}秒`;
                     headers: headers,
                     body: JSON.stringify(requestBody)
                 });
-                if (!response.ok) throw new Error(`API Error: ${response.status} ${await response.text()}`);
+                if (!response.ok) {
+                    const error = new Error(`API Error: ${response.status} ${await response.text()}`);
+                    error.response = response;
+                    throw error;
+                }
                 await processStream(response, chat, provider, chatId, chatType);
             } catch (error) {
-                console.error('AI回复失败:', error);
-                showToast(`AI回复失败: ${error.message}`);
+                showApiError(error);
             } finally {
                 isGenerating = false;
                 getReplyBtn.disabled = false;
@@ -11593,7 +13807,7 @@ return `${seconds}秒`;
                     const newName = prompt('输入新名称：', p.name);
                     if (!newName || newName === p.name) return;
                     db.globalCssPresets[idx].name = newName;
-                    dataStorage.saveData('globalCssPresets', db.globalCssPresets);
+                    saveData();
                     openGlobalCssManageModal();
                     populateGlobalCssPresetSelect();
                 };
@@ -11605,7 +13819,7 @@ return `${seconds}秒`;
                 delBtn.onclick = function() {
                     if (!confirm('确定删除预设 "' + p.name + '" ?')) return;
                     db.globalCssPresets.splice(idx, 1);
-                    dataStorage.saveData('globalCssPresets', db.globalCssPresets);
+                    saveData();
                     openGlobalCssManageModal();
                     populateGlobalCssPresetSelect();
                 };
@@ -12071,7 +14285,11 @@ return `${seconds}秒`;
                 try {
                     const d = 'gemini' === n.value ? {} : {Authorization: `Bearer ${l}`},
                         g = await fetch(i, {method: 'GET', headers: d});
-                    if (!g.ok) throw new Error(`网络响应错误: ${g.status}`);
+                    if (!g.ok) {
+                        const error = new Error(`网络响应错误: ${g.status}`);
+                        error.response = g;
+                        throw error;
+                    }
                     const u = await g.json();
                     let p = [];
                     'gemini' !== n.value && u.data ? p = u.data.map(e => e.id) : 'gemini' === n.value && u.models && (p = u.models.map(e => e.name.replace('models/', ''))), a.innerHTML = '', p.length > 0 ? p.forEach(e => {
@@ -12079,7 +14297,7 @@ return `${seconds}秒`;
                         t.value = e, t.textContent = e, a.appendChild(t)
                     }) : a.innerHTML = '<option value="">未找到任何模型</option>', showToast('模型列表拉取成功！')
                 } catch (f) {
-                    showToast(`拉取失败: ${f.message}`), a.innerHTML = '<option value="">拉取失败</option>'
+                    showApiError(f), a.innerHTML = '<option value="">拉取失败</option>'
                 } finally {
                     t.classList.remove('loading'), t.disabled = !1
                 }
@@ -12613,310 +14831,99 @@ return `${seconds}秒`;
         }
 
 
-        // 优化的消息保存操作
-        async function saveMessageToStorage(chatId, chatType, message) {
-            try {
-                await dataStorage.addMessage(chatId, chatType, message);
-                return true;
-            } catch (error) {
-                console.error('保存消息失败:', error);
-                return false;
-            }
-        }
 
-        // 优化的消息删除操作
-        async function deleteMessageFromStorage(chatId, chatType, messageId) {
-            try {
-                await dataStorage.deleteMessage(chatId, chatType, messageId);
-                return true;
-            } catch (error) {
-                console.error('删除消息失败:', error);
-                return false;
-            }
-        }
-
-        // 优化的消息更新操作
-        async function updateMessageInStorage(chatId, chatType, messageId, updatedMessage) {
-            try {
-                await dataStorage.updateMessage(chatId, chatType, messageId, updatedMessage);
-                return true;
-            } catch (error) {
-                console.error('更新消息失败:', error);
-                return false;
-            }
-        }
-
-        // 创建完整的备份数据（包含所有消息历史）
+        // 创建完整的备份数据
         async function createFullBackupData() {
-            const startTime = Date.now();
+            // The db object is already in memory, so we just need to clone it.
+            // A deep clone is necessary to avoid any potential mutation issues.
+            const backupData = JSON.parse(JSON.stringify(db));
+            
+            // Add export metadata
+            backupData._exportVersion = '3.0'; // New version that uses multi-table Dexie
+            backupData._exportTimestamp = Date.now();
 
-            try {
-                // 获取基础数据
-                const baseData = await dataStorage.getData('章鱼喷墨机') || {};
-
-                // 重建完整的数据结构
-                const fullData = {
-                    ...db,
-                    ...baseData,
-                    characters: [],
-                    groups: [],
-                    // 添加版本信息用于兼容性检测
-                    _exportVersion: '2.0',
-                    _exportTimestamp: Date.now(),
-                    _optimizedStorage: true
-                };
-
-                // 重建角色数据（包含完整消息历史）
-                for (const char of db.characters) {
-                    const fullHistory = await dataStorage.getChatMessages(char.id, 'private');
-                    const charData = await dataStorage.getData(`character_${char.id}`) || char;
-
-                    fullData.characters.push({
-                        ...charData,
-                        history: fullHistory || []
-                    });
-                }
-
-                // 重建群组数据（包含完整消息历史）
-                for (const group of db.groups) {
-                    const fullHistory = await dataStorage.getChatMessages(group.id, 'group');
-                    const groupData = await dataStorage.getData(`group_${group.id}`) || group;
-
-                    fullData.groups.push({
-                        ...groupData,
-                        history: fullHistory || []
-                    });
-                }
-
-                console.log(`完整备份数据创建完成，耗时: ${Date.now() - startTime}ms`);
-                return fullData;
-
-            } catch (error) {
-                console.error('创建备份数据失败:', error);
-                throw new Error(`备份数据创建失败: ${error.message}`);
-            }
+            return backupData;
         }
 
-        // 导入备份数据（兼容新旧格式）
+        // 导入备份数据
         async function importBackupData(data) {
-            const startTime = Date.now();
+            // Clear all existing tables in the database first
+            await Promise.all([
+                dexieDB.characters.clear(),
+                dexieDB.groups.clear(),
+                dexieDB.worldBooks.clear(),
+                dexieDB.myStickers.clear(),
+                dexieDB.globalSettings.clear(),
+                dexieDB.forumPosts.clear(),
+            ]);
 
-            try {
-                // 检测数据格式版本
-                const isOptimizedFormat = data._optimizedStorage === true;
-                const exportVersion = data._exportVersion || '1.0';
+            let convertedData = data;
 
-                console.log(`检测到数据格式版本: ${exportVersion}, 优化存储: ${isOptimizedFormat}`);
-
-                // 清空现有数据
-                await dataStorage.clearAll();
-
-                // 重建数据库结构
-                db = {
-                    apiSettings: data.apiSettings || {},
-                    wallpaper: data.wallpaper || 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg',
-                    // characters: [],
-                    // groups: [],
-                    myStickers: data.myStickers || [],
-                    homeScreenMode: data.homeScreenMode || 'night',
-                    worldBooks: data.worldBooks || [],
-                    fontUrl: data.fontUrl || '',
-                    customIcons: data.customIcons || {},
-                    apiPresets: data.apiPresets || [],
-                    bubbleCssPresets: data.bubbleCssPresets || [],
-                    myPersonaPresets: data.myPersonaPresets || [],
-                    globalCss: data.globalCss || '',
-                    globalCssPresets: data.globalCssPresets || [],
-                    homeSignature: data.homeSignature || '编辑个性签名...',
-                    homeWidgetSettings: data.homeWidgetSettings || JSON.parse(JSON.stringify(defaultWidgetSettings))
-                };
-
-                let importStats = {
-                    charactersCount: 0,
-                    groupsCount: 0,
-                    messagesCount: 0
-                };
-
-                // 导入角色数据
-                if (data.characters && Array.isArray(data.characters)) {
-                    for (const char of data.characters) {
-                        // 保存角色基础信息
-                        const { history, ...charData } = char;
-                        charData.history = []; // 保持兼容性
-
-                        // 设置默认值
-                        if (charData.isPinned === undefined) charData.isPinned = false;
-                        if (charData.status === undefined) charData.status = '在线';
-                        if (!charData.worldBookIds) charData.worldBookIds = [];
-                        if (charData.customBubbleCss === undefined) charData.customBubbleCss = '';
-                        if (charData.useCustomBubbleCss === undefined) charData.useCustomBubbleCss = false;
-
-                        // db.characters.push(charData);
-                        await dataStorage.saveData(`character_${char.id}`, charData);
-
-                        // 保存消息历史
-                        if (history && Array.isArray(history) && history.length > 0) {
-                            await dataStorage.saveChatMessages(char.id, 'private', history);
-                            importStats.messagesCount += history.length;
-                        }
-
-                        importStats.charactersCount++;
+            // Version check. If it's not the new version 3.0, assume it's an old format and try to convert it.
+            if (data._exportVersion !== '3.0') {
+                showToast('检测到旧版备份文件，正在尝试转换...');
+                
+                const reassembleHistory = (chat, backupData) => {
+                    if (!chat.history || !Array.isArray(chat.history) || chat.history.length === 0) {
+                        return [];
                     }
-                }
-
-                // 导入群组数据
-                if (data.groups && Array.isArray(data.groups)) {
-                    for (const group of data.groups) {
-                        // 保存群组基础信息
-                        const { history, ...groupData } = group;
-                        groupData.history = []; // 保持兼容性
-
-                        // 设置默认值
-                        if (groupData.isPinned === undefined) groupData.isPinned = false;
-                        if (!groupData.worldBookIds) groupData.worldBookIds = [];
-                        if (groupData.customBubbleCss === undefined) groupData.customBubbleCss = '';
-                        if (groupData.useCustomBubbleCss === undefined) groupData.useCustomBubbleCss = false;
-
-                        // db.groups.push(groupData);
-                        await dataStorage.saveData(`group_${group.id}`, groupData);
-
-                        // 保存消息历史
-                        if (history && Array.isArray(history) && history.length > 0) {
-                            await dataStorage.saveChatMessages(group.id, 'group', history);
-                            importStats.messagesCount += history.length;
-                        }
-
-                        importStats.groupsCount++;
+                    // If the first item is an object, assume history is already assembled (modern format or non-chunked old format).
+                    if (typeof chat.history[0] === 'object' && chat.history[0] !== null) {
+                        return chat.history;
                     }
-                }
-
-                for (const key in db){
-                    await dataStorage.saveData(key, db[key]);
-                }
-
-                // if(data.apiSettings){
-                //     await dataStorage.saveData('apiSettings', data.apiSettings);
-                // }
-                if(data.apiPresets){
-                    await dataStorage.saveData('apiPresets', data.apiPresets);
-                }
-                if(data.bubbleCssPresets){
-                    await dataStorage.saveData('bubbleCssPresets', data.bubbleCssPresets);
-                }
-                if(data.myPersonaPresets){
-                    await dataStorage.saveData('myPersonaPresets', data.myPersonaPresets);
-                }
-                if(data.globalCssPresets){
-                    await dataStorage.saveData('globalCssPresets', data.globalCssPresets);
-                }
-                if(data.globalCss){
-                    await dataStorage.saveData('globalCss', data.globalCss);
-                }
-                // if(data.customIcons){
-                //     await dataStorage.saveData('customIcons', data.customIcons);
-                // }
-                // if(data.fontUrl){
-                //     await dataStorage.saveData('fontUrl', data.fontUrl);
-                // }
-                // if(data.homeScreenMode){
-                //     await dataStorage.saveData('homeScreenMode', data.homeScreenMode);
-                // }
-                // if(data.wallpaper){
-                //     await dataStorage.saveData('wallpaper', data.wallpaper);
-                // }
-
-                // console.log(data)
-                // console.log(db)
-
-                // 保存基础数据
-                await dataStorage.saveData('章鱼喷墨机', db);
-
-                const duration = Date.now() - startTime;
-                const message = `导入完成: ${importStats.charactersCount}个角色, ${importStats.groupsCount}个群组, ${importStats.messagesCount}条消息 (耗时${duration}ms)`;
-
-
-
-                return {
-                    success: true,
-                    message: message,
-                    stats: importStats,
-                    duration: duration
+                    // If it's an array of strings, it must be chunk keys from the old system.
+                    if (backupData.__chunks__ && typeof chat.history[0] === 'string') {
+                        let fullHistory = [];
+                        chat.history.forEach(key => {
+                            if (backupData.__chunks__[key]) {
+                                try {
+                                    const chunk = JSON.parse(backupData.__chunks__[key]);
+                                    fullHistory = fullHistory.concat(chunk);
+                                } catch (e) {
+                                    console.error(`Failed to parse history chunk ${key}`, e);
+                                }
+                            }
+                        });
+                        return fullHistory;
+                    }
+                    // Return empty array if the format is unrecognized
+                    return [];
                 };
 
-            } catch (error) {
-                console.error('导入数据失败:', error);
-                return {
-                    success: false,
-                    error: error.message,
-                    duration: Date.now() - startTime
-                };
+                // Create a new data object to avoid mutating the original
+                const newData = { ...data };
+
+                if (newData.characters) {
+                    newData.characters = newData.characters.map(char => ({
+                        ...char,
+                        history: reassembleHistory(char, data)
+                    }));
+                }
+                if (newData.groups) {
+                    newData.groups = newData.groups.map(group => ({
+                        ...group,
+                        history: reassembleHistory(group, data)
+                    }));
+                }
+                
+                convertedData = newData;
             }
+
+            // Now, use the (potentially converted) data to populate the DB.
+            if (convertedData.characters) await dexieDB.characters.bulkPut(convertedData.characters);
+            if (convertedData.groups) await dexieDB.groups.bulkPut(convertedData.groups);
+            if (convertedData.worldBooks) await dexieDB.worldBooks.bulkPut(convertedData.worldBooks);
+            if (convertedData.myStickers) await dexieDB.myStickers.bulkPut(convertedData.myStickers);
+            if (convertedData.forumPosts) await dexieDB.forumPosts.bulkPut(convertedData.forumPosts);
+
+            const settingsPromises = globalSettingKeys
+                .filter(key => convertedData[key] !== undefined)
+                .map(key => dexieDB.globalSettings.put({ key, value: convertedData[key] }));
+
+            await Promise.all(settingsPromises);
+
+            return { success: true, message: '导入成功！' };
         }
-
-        // 数据完整性验证
-        async function validateDataIntegrity() {
-            try {
-                const issues = [];
-
-                // 检查角色数据完整性
-                for (const char of db.characters) {
-                    const charData = await dataStorage.getData(`character_${char.id}`);
-                    const messages = await dataStorage.getChatMessages(char.id, 'private');
-
-                    if (!charData) {
-                        issues.push(`角色 ${char.remarkName} 的基础数据缺失`);
-                    }
-
-                    if (char.history && char.history.length > 0 && messages.length === 0) {
-                        issues.push(`角色 ${char.remarkName} 的消息历史未正确迁移`);
-                    }
-                }
-
-                // 检查群组数据完整性
-                for (const group of db.groups) {
-                    const groupData = await dataStorage.getData(`group_${group.id}`);
-                    const messages = await dataStorage.getChatMessages(group.id, 'group');
-
-                    if (!groupData) {
-                        issues.push(`群组 ${group.name} 的基础数据缺失`);
-                    }
-
-                    if (group.history && group.history.length > 0 && messages.length === 0) {
-                        issues.push(`群组 ${group.name} 的消息历史未正确迁移`);
-                    }
-                }
-
-                return {
-                    isValid: issues.length === 0,
-                    issues: issues
-                };
-
-            } catch (error) {
-                return {
-                    isValid: false,
-                    issues: [`数据完整性验证失败: ${error.message}`]
-                };
-            }
-        }
-
-        // 重写原有的消息操作函数以使用优化存储
-        const originalSaveData = saveData;
-        window.saveData = async (data) => {
-            // 对于频繁的消息操作，使用优化的存储方法
-            if (currentChatId && (currentChatType === 'private' || currentChatType === 'group')) {
-                const chat = currentChatType === 'private'
-                    ? db.characters.find(c => c.id === currentChatId)
-                    : db.groups.find(g => g.id === currentChatId);
-
-                if (chat && chat.history) {
-                    // 保存消息到优化存储
-                    await dataStorage.saveChatMessages(currentChatId, currentChatType, chat.history);
-                }
-            }
-
-            // 保存其他数据
-            return originalSaveData(data);
-        };
         
                 function setupForumBindingFeature() {
             const forumLinkBtn = document.getElementById('forum-link-btn');
@@ -13117,125 +15124,6 @@ function renderPostDetail(post) {
 
 
 
-
-        function setupStorageAnalysisScreen() {
-            const screen = document.getElementById('storage-analysis-screen');
-            const chartContainer = document.getElementById('storage-chart-container');
-            let myChart = null;
-
-            function renderStorageChart(info) {
-                const listContainer = document.getElementById('storage-details-list');
-                if (!info || !info.categorizedSizes) {
-                    chartContainer.innerHTML = '<p class="placeholder-text">无法获取存储数据。</p>';
-                    listContainer.innerHTML = ''; // Also clear the list
-                    return;
-                }
-
-                if (myChart) {
-                    myChart.dispose();
-                }
-                myChart = echarts.init(chartContainer);
-
-                const { categorizedSizes, totalSize } = info;
-
-                const dataForChart = [
-                    { value: categorizedSizes.messages, name: '消息数据' },
-                    { value: categorizedSizes.charactersAndGroups, name: '角色与群组' },
-                    { value: categorizedSizes.worldAndForum, name: '世界书与论坛' },
-                    { value: categorizedSizes.personalization, name: '个性化设置' },
-                    { value: categorizedSizes.apiAndCore, name: 'API与核心配置' },
-                    { value: categorizedSizes.other, name: '其他' },
-                ].filter(item => item.value > 0);
-
-                const option = {
-                    title: {
-                        text: '存储空间占用分析',
-                        subtext: `总大小: ${(totalSize / 1024).toFixed(2)} KB`,
-                        left: 'center',
-                        top: '5%'
-                    },
-                    tooltip: {
-                        trigger: 'item',
-                        formatter: '{a} <br/>{b} : {c} bytes ({d}%)'
-                    },
-                    legend: {
-                        show: false // We will use our custom list as legend
-                    },
-                    series: [
-                        {
-                            name: '数据类型',
-                            type: 'pie',
-                            radius: ['40%', '60%'], // Make it a donut chart
-                            center: ['50%', '60%'],
-                            avoidLabelOverlap: false,
-                            label: {
-                                show: false,
-                                position: 'center'
-                            },
-                            emphasis: {
-                                label: {
-                                    show: true,
-                                    fontSize: '20',
-                                    fontWeight: 'bold'
-                                }
-                            },
-                            labelLine: {
-                                show: false
-                            },
-                            data: dataForChart
-                        }
-                    ]
-                };
-                myChart.setOption(option);
-
-                // --- NEW: Render the details list ---
-                listContainer.innerHTML = '';
-                const chartColors = myChart.getOption().color;
-
-                dataForChart.forEach((item, index) => {
-                    const percentage = totalSize > 0 ? ((item.value / totalSize) * 100).toFixed(2) : 0;
-                    const sizeInKb = (item.value / 1024).toFixed(2);
-                    const color = chartColors[index % chartColors.length];
-
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'storage-detail-item';
-                    itemEl.innerHTML = `
-                        <div class="storage-color-indicator" style="background-color: ${color};"></div>
-                        <div class="storage-detail-info">
-                            <span class="storage-detail-name">${item.name}</span>
-                            <span class="storage-detail-size">${sizeInKb} KB</span>
-                        </div>
-                        <span class="storage-detail-percentage">${percentage}%</span>
-                    `;
-                    listContainer.appendChild(itemEl);
-                });
-            }
-
-            const observer = new MutationObserver(async (mutations) => {
-                for (let mutation of mutations) {
-                    if (mutation.attributeName === 'class') {
-                        const isActive = screen.classList.contains('active');
-                        if (isActive) {
-                            chartContainer.innerHTML = '<p class="placeholder-text">正在加载数据...</p>';
-                            try {
-                                const info = await dataStorage.getStorageInfo();
-                                renderStorageChart(info);
-                            } catch (error) {
-                                chartContainer.innerHTML = `<p class="placeholder-text">加载图表失败: ${error.message}</p>`;
-                            }
-                        }
-                    }
-                }
-            });
-
-            observer.observe(screen, { attributes: true });
-
-            window.addEventListener('resize', () => {
-                if (myChart) {
-                    myChart.resize();
-                }
-            });
-        }
 
 function setupForumFeature() {
     const refreshBtn = document.getElementById('forum-refresh-btn');
@@ -13505,7 +15393,9 @@ ${context}
         });
 
         if (!response.ok) {
-            throw new Error(`API 请求失败: ${response.status} ${await response.text()}`);
+            const error = new Error(`API 请求失败: ${response.status} ${await response.text()}`);
+            error.response = response;
+            throw error;
         }
 
         const result = await response.json();
@@ -13532,8 +15422,8 @@ ${context}
         }
 
     } catch (error) {
-        console.error('刷新论坛内容失败:', error);
-        postsContainer.innerHTML = `<p class="placeholder-text" style="margin-top: 50px;">生成失败了...<br><span style="font-size: 12px; color: #aaa;">${error.message}</span></p>`;
+        showApiError(error);
+        postsContainer.innerHTML = `<p class="placeholder-text" style="margin-top: 50px;">生成失败了，请检查API设置或网络后重试。</p>`;
     } finally {
         refreshBtn.disabled = false;
     }
@@ -13888,7 +15778,11 @@ function renderForumPosts(posts) {
                 const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` };
 
                 const response = await fetch(endpoint, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
-                if (!response.ok) throw new Error(`API Error: ${response.status} ${await response.text()}`);
+                if (!response.ok) {
+                    const error = new Error(`API Error: ${response.status} ${await response.text()}`);
+                    error.response = response;
+                    throw error;
+                }
                 
                 const result = await response.json();
                 const contentStr = result.choices[0].message.content;
@@ -13943,13 +15837,12 @@ function renderForumPosts(posts) {
                 }
 
             } catch (error) {
-                console.error('生成偷看内容失败:', error);
+                showApiError(error);
                 // Clear cache for this app on failure
                 delete peekContentCache[appType];
-                const errorMessage = "内容生成失败，AI返回格式错误，请手动刷新重试。";
-                showToast(errorMessage);
+                const errorMessage = "内容生成失败，请刷新重试。";
                 if (appType === 'album') {
-                    document.querySelector('#peek-album-screen .album-grid').innerHTML = `<p class="placeholder-text">内容生成失败，请刷新重试</p>`;
+                    document.querySelector('#peek-album-screen .album-grid').innerHTML = `<p class="placeholder-text">${errorMessage}</p>`;
                 } else if (appType === 'unlock') {
                     document.getElementById('peek-unlock-screen').innerHTML = `<header class="app-header"><button class="back-btn" data-target="peek-screen">‹</button><div class="title-container"><h1 class="title">错误</h1></div><button class="action-btn">···</button></header><main class="content"><p class="placeholder-text">${errorMessage}</p></main>`;
                 } else if (targetContainer) {
