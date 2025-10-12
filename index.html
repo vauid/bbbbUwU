@@ -4506,7 +4506,7 @@ border-top: none;
             position: relative;
             background-color: #fff;
             border-radius: 15px;
-            padding: 8px 12px;
+            padding: 6px 10px;
             font-size: 12px; /* 气泡字体大小 */
             color: #333;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
@@ -8385,15 +8385,20 @@ ${historyContext}
 
            if (!widget || !modal || !form) return;
 
-           // 1. Open modal on widget click
-           widget.addEventListener('click', () => {
-               // Get current image to display in preview
+           // 1. Open modal on widget click/tap
+           const openModalAction = () => {
                const currentImage = db.homeWidgetSettings?.polaroidImage || 'https://i.postimg.cc/XvFDdTKY/Smart-Select-20251013-023208.jpg';
                preview.style.backgroundImage = `url("${currentImage}")`;
                preview.innerHTML = '';
                urlInput.value = '';
                fileUpload.value = null;
                modal.classList.add('visible');
+           };
+
+           widget.addEventListener('click', openModalAction);
+           widget.addEventListener('touchend', (e) => {
+               e.preventDefault();
+               openModalAction();
            });
 
            // 2. Handle image preview (URL input)
