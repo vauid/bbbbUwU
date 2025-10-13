@@ -6244,1059 +6244,123 @@ border-top: none;
         const linkGroupWorldBookBtn = document.getElementById('link-group-world-book-btn');
 
         // --- Dexie DB Setup ---
-        // --- 优化的数据存储系统 ---
-        class OptimizedDataStorage {
-            constructor() {
-                // 创建数据库
-                this.db = new Dexie('章鱼喷墨机DB_V2');
-
-                // 定义数据库结构
-                this.db.version(1).stores({
-                    // 基础数据存储
-                    storage: 'key, value, timestamp',
-                    // 消息分块存储
-                    messageChunks: 'id, chatId, chatType, chunkIndex, messages, timestamp',
-                    // 元数据存储
-                    metadata: 'key, value, timestamp'
-                });
-
-                // LRU缓存配置
-                this.cache = new Map();
-                this.maxCacheSize = 50; // 最大缓存50个数据块
-                this.chunkSize = 100; // 每个数据块100条消息
-
-                // 性能监控
-                this.performanceMetrics = {
-                    cacheHits: 0,
-                    cacheMisses: 0,
-                    operationTimes: [],
-                    memoryUsage: 0
-                };
-            }
-
-
-
-            // LRU缓存管理
-            updateCache(key, value) {
-                if (this.cache.has(key)) {
-                    this.cache.delete(key);
-                }
-                this.cache.set(key, value);
-
-                if (this.cache.size > this.maxCacheSize) {
-                    const firstKey = this.cache.keys().next().value;
-                    this.cache.delete(firstKey);
-                }
-
-                // 更新内存使用量估算
-                this.performanceMetrics.memoryUsage = JSON.stringify([...this.cache.values()]).length;
-            }
-
-            // 从缓存获取数据
-            getFromCache(key) {
-                if (this.cache.has(key)) {
-                    const value = this.cache.get(key);
-                    // 移到最后（最近使用）
-                    this.cache.delete(key);
-                    this.cache.set(key, value);
-                    this.performanceMetrics.cacheHits++;
-                    return value;
-                }
-                this.performanceMetrics.cacheMisses++;
-                return null;
-            }
-
-            // 保存基础数据（非消息数据）
-            async saveData(key, data) {
-                const startTime = Date.now();
-                try {
-                    const item = {
-                        key: key,
-                        value: JSON.stringify(data),
-                        timestamp: Date.now()
-                    };
-
-                    await this.db.storage.put(item);
-                    this.updateCache(key, data);
-                    console.log(`数据已保存: ${key}`);
-                    return true;
-                } catch (error) {
-                    console.error('保存数据失败:', error);
-                    return false;
-                }
-            }
-
-            // 获取基础数据
-            async getData(key) {
-                const startTime = Date.now();
-                try {
-                    // 先检查缓存
-                    const cached = this.getFromCache(key);
-                    if (cached !== null) {
-                        return cached;
-                    }
-
-                    const item = await this.db.storage.get(key);
-                    if (item) {
-                        const data = JSON.parse(item.value);
-                        this.updateCache(key, data);
-                        return data;
-                    } else {
-                        console.log(`未找到数据: ${key}`);
-                        return null;
-                    }
-                } catch (error) {
-                    console.error('获取数据失败:', error);
-                    return null;
-                }
-            }
-
-            // 保存聊天消息（分块存储）
-            async saveChatMessages(chatId, chatType, messages) {
-                const startTime = Date.now();
-                try {
-                    // 清除该聊天的所有现有分块
-                    await this.db.messageChunks.where('chatId').equals(chatId).and(chunk => chunk.chatType === chatType).delete();
-
-                    // 将消息分块存储
-                    const chunks = [];
-                    for (let i = 0; i < messages.length; i += this.chunkSize) {
-                        const chunkMessages = messages.slice(i, i + this.chunkSize);
-                        const chunkId = `${chatId}_${chatType}_${Math.floor(i / this.chunkSize)}`;
-
-                        chunks.push({
-                            id: chunkId,
-                            chatId: chatId,
-                            chatType: chatType,
-                            chunkIndex: Math.floor(i / this.chunkSize),
-                            messages: chunkMessages,
-                            timestamp: Date.now()
-                        });
-                    }
-
-                    if (chunks.length > 0) {
-                        await this.db.messageChunks.bulkPut(chunks);
-                    }
-
-                    // 更新缓存
-                    const cacheKey = `messages_${chatId}_${chatType}`;
-                    this.updateCache(cacheKey, messages);
-
-                    console.log(`消息已分块保存: ${chatId} (${chunks.length}个分块)`);
-                    return true;
-                } catch (error) {
-                    console.error('保存消息失败:', error);
-                    return false;
-                }
-            }
-
-            // 获取聊天消息（按需加载）
-            async getChatMessages(chatId, chatType, limit = null, offset = 0) {
-                const startTime = Date.now();
-                try {
-                    const cacheKey = `messages_${chatId}_${chatType}`;
-
-                    // 如果没有限制，先检查缓存
-                    if (!limit) {
-                        const cached = this.getFromCache(cacheKey);
-                        if (cached !== null) {
-                            return cached;
-                        }
-                    }
-
-                    // 从数据库获取分块
-                    const chunks = await this.db.messageChunks
-                        .where('chatId').equals(chatId)
-                        .and(chunk => chunk.chatType === chatType)
-                        .sortBy('chunkIndex');
-
-                    if (chunks.length === 0) {
-                        return [];
-                    }
-
-                    // 合并所有消息
-                    let allMessages = [];
-                    chunks.forEach(chunk => {
-                        allMessages = allMessages.concat(chunk.messages);
-                    });
-
-                    // 如果没有限制，更新缓存
-                    if (!limit) {
-                        this.updateCache(cacheKey, allMessages);
-                    }
-
-                    // 应用分页
-                    if (limit) {
-                        const result = allMessages.slice(offset, offset + limit);
-                        return result;
-                    }
-
-                    return allMessages;
-                } catch (error) {
-                    console.error('获取消息失败:', error);
-                    return [];
-                }
-            }
-
-            // 添加单条消息（增量更新）
-            async addMessage(chatId, chatType, message) {
-                const startTime = Date.now();
-                try {
-                    // 1. Find the last chunk for the chat
-                    const lastChunk = await this.db.messageChunks
-                        .where({ chatId: chatId, chatType: chatType })
-                        .last();
-
-                    if (lastChunk && lastChunk.messages.length < this.chunkSize) {
-                        // 2a. If last chunk exists and is not full, update it
-                        lastChunk.messages.push(message);
-                        await this.db.messageChunks.put(lastChunk);
-                    } else {
-                        // 2b. If no chunk or last chunk is full, create a new one
-                        const newChunkIndex = lastChunk ? lastChunk.chunkIndex + 1 : 0;
-                        const newChunkId = `${chatId}_${chatType}_${newChunkIndex}`;
-                        const newChunk = {
-                            id: newChunkId,
-                            chatId: chatId,
-                            chatType: chatType,
-                            chunkIndex: newChunkIndex,
-                            messages: [message],
-                            timestamp: Date.now()
-                        };
-                        await this.db.messageChunks.add(newChunk);
-                    }
-
-                    // 3. Update the full message history in the LRU cache if it exists
-                    const cacheKey = `messages_${chatId}_${chatType}`;
-                    if (this.cache.has(cacheKey)) {
-                        const cachedMessages = this.getFromCache(cacheKey); // This also moves it to the end of the LRU
-                        if (cachedMessages) {
-                            cachedMessages.push(message);
-                            this.updateCache(cacheKey, cachedMessages);
-                        }
-                    }
-                    
-                    return true;
-                } catch (error) {
-                    console.error('添加消息失败 (增量):', error);
-                    return false;
-                }
-            }
-
-            // 删除消息
-            async deleteMessage(chatId, chatType, messageId) {
-                const startTime = Date.now();
-                try {
-                    const currentMessages = await this.getChatMessages(chatId, chatType);
-                    const filteredMessages = currentMessages.filter(msg => msg.id !== messageId);
-
-                    await this.saveChatMessages(chatId, chatType, filteredMessages);
-
-
-                    return true;
-                } catch (error) {
-                    console.error('删除消息失败:', error);
-
-                    return false;
-                }
-            }
-
-            // 更新消息
-            async updateMessage(chatId, chatType, messageId, updatedMessage) {
-                const startTime = Date.now();
-                try {
-                    const currentMessages = await this.getChatMessages(chatId, chatType);
-                    const messageIndex = currentMessages.findIndex(msg => msg.id === messageId);
-
-                    if (messageIndex !== -1) {
-                        currentMessages[messageIndex] = { ...currentMessages[messageIndex], ...updatedMessage };
-                        await this.saveChatMessages(chatId, chatType, currentMessages);
-
-                        return true;
-                    }
-
-                    return false;
-                } catch (error) {
-                    console.error('更新消息失败:', error);
-
-                    return false;
-                }
-            }
-
-            // 清空聊天记录
-            async clearChatMessages(chatId, chatType) {
-                const startTime = Date.now();
-                try {
-                    await this.db.messageChunks.where('chatId').equals(chatId).and(chunk => chunk.chatType === chatType).delete();
-
-                    // 清除缓存
-                    const cacheKey = `messages_${chatId}_${chatType}`;
-                    this.cache.delete(cacheKey);
-
-
-                    return true;
-                } catch (error) {
-                    console.error('清空消息失败:', error);
-
-                    return false;
-                }
-            }
-
-            // 删除数据
-            async removeData(key) {
-                const startTime = Date.now();
-                try {
-                    await this.db.storage.delete(key);
-                    this.cache.delete(key);
-                    console.log(`数据已删除: ${key}`);
-
-                    return true;
-                } catch (error) {
-                    console.error('删除数据失败:', error);
-
-                    return false;
-                }
-            }
-
-            // 清空所有数据
-            async clearAll() {
-                const startTime = Date.now();
-                try {
-                    await this.db.storage.clear();
-                    await this.db.messageChunks.clear();
-                    await this.db.metadata.clear();
-                    this.cache.clear();
-                    console.log('所有数据已清空');
-
-                    return true;
-                } catch (error) {
-                    console.error('清空数据失败:', error);
-
-                    return false;
-                }
-            }
-
-            // 获取所有存储的键
-            async getAllKeys() {
-                try {
-                    const storageItems = await this.db.storage.toArray();
-                    return storageItems.map(item => item.key);
-                } catch (error) {
-                    console.error('获取所有键失败:', error);
-                    return [];
-                }
-            }
-
-            // 获取存储信息
-            async getStorageInfo() {
-                const startTime = Date.now();
-                try {
-                    const [storageItems, messageChunks] = await Promise.all([
-                        this.db.storage.toArray(),
-                        this.db.messageChunks.toArray()
-                    ]);
-
-                    const categorizedSizes = {
-                        messages: 0,
-                        charactersAndGroups: 0,
-                        worldAndForum: 0,
-                        personalization: 0,
-                        apiAndCore: 0,
-                        other: 0
-                    };
-
-                    categorizedSizes.messages = messageChunks.reduce((sum, chunk) => sum + JSON.stringify(chunk.messages).length, 0);
-
-                    storageItems.forEach(item => {
-                        const size = item.value.length;
-                        const key = item.key;
-
-                        if (key.startsWith('character_') || key.startsWith('group_')) {
-                            categorizedSizes.charactersAndGroups += size;
-                        } else if (['worldBooks', 'forumPosts', 'forumBindings'].includes(key)) {
-                            categorizedSizes.worldAndForum += size;
-                        } else if (['wallpaper', 'fontUrl', 'customIcons', 'bubbleCssPresets', 'globalCss', 'myPersonaPresets', 'homeSignature', 'homeWidgetSettings', 'myStickers'].includes(key)) {
-                            categorizedSizes.personalization += size;
-                        } else if (['apiSettings', 'apiPresets', '章鱼喷墨机'].includes(key)) {
-                            categorizedSizes.apiAndCore += size;
-                        } else {
-                            categorizedSizes.other += size;
-                        }
-                    });
-                    
-                    const totalSize = Object.values(categorizedSizes).reduce((sum, size) => sum + size, 0);
-
-                    const info = {
-                        totalSize: totalSize,
-                        categorizedSizes: categorizedSizes,
-                        itemCount: storageItems.length,
-                        chunkCount: messageChunks.length,
-                        cacheSize: this.cache.size,
-                    };
-
-                    return info;
-                } catch (error) {
-                    console.error('获取存储信息失败:', error);
-                    return null;
-                }
-            }
-
-            // 数据迁移方法（从旧版本迁移）
-            async migrateFromOldStorage() {
-                const startTime = Date.now();
-                let oldDb = null;
-                let migrationSuccess = false;
-
-                try {
-                    // 尝试从旧数据库获取数据
-                    oldDb = new Dexie('章鱼喷墨机DB');
-                    oldDb.version(1).stores({
-                        storage: 'key, value, timestamp'
-                    });
-
-                    // 检查旧数据库是否存在数据
-                    const oldData = await oldDb.storage.get('章鱼喷墨机');
-                    if (oldData) {
-                        console.log('检测到旧数据库，开始迁移...');
-                        const data = JSON.parse(oldData.value);
-
-                        // 迁移基础数据
-                        const { characters, groups, ...baseData } = data;
-                        await this.saveData('章鱼喷墨机', baseData);
-
-                        let migratedCharacters = 0;
-                        let migratedGroups = 0;
-
-                        // 迁移角色消息
-                        if (characters) {
-                            for (const char of characters) {
-                                if (char.history && char.history.length > 0) {
-                                    await this.saveChatMessages(char.id, 'private', char.history);
-                                }
-                                // 保存角色信息（不包含history）
-                                const { history, ...charData } = char;
-                                charData.history = []; // 保持兼容性
-                                await this.saveData(`character_${char.id}`, charData);
-                                migratedCharacters++;
-                            }
-                        }
-
-                        // 迁移群组消息
-                        if (groups) {
-                            for (const group of groups) {
-                                if (group.history && group.history.length > 0) {
-                                    await this.saveChatMessages(group.id, 'group', group.history);
-                                }
-                                // 保存群组信息（不包含history）
-                                const { history, ...groupData } = group;
-                                groupData.history = []; // 保持兼容性
-                                await this.saveData(`group_${group.id}`, groupData);
-                                migratedGroups++;
-                            }
-                        }
-
-                        migrationSuccess = true;
-                        console.log(`数据迁移完成: ${migratedCharacters}个角色, ${migratedGroups}个群组`);
-
-                        // 迁移成功后立即删除旧数据库
-                        try {
-                            console.log('开始删除旧数据库...');
-
-                            // 关闭数据库连接
-                            if (oldDb.isOpen()) {
-                                oldDb.close();
-                            }
-
-                            // 删除整个数据库
-                            await oldDb.delete();
-                            console.log('旧数据库删除成功');
-
-                            // 验证删除是否成功
-                            const deletedDb = new Dexie('章鱼喷墨机DB');
-                            try {
-                                deletedDb.version(1).stores({
-                                    storage: 'key, value, timestamp'
-                                });
-                                const testData = await deletedDb.storage.get('章鱼喷墨机');
-                                if (!testData) {
-                                    console.log('旧数据库删除验证成功');
-                                } else {
-                                    console.warn('旧数据库可能未完全删除');
-                                }
-                                deletedDb.close();
-                            } catch (verifyError) {
-                                // 如果无法访问，说明删除成功
-                                console.log('旧数据库删除验证成功（数据库不存在）');
-                            }
-
-                        } catch (deleteError) {
-                            console.error('删除旧数据库失败，但不影响主要功能:', deleteError);
-                            // 尝试清空数据而不是删除数据库
-                            try {
-                                if (!oldDb.isOpen()) {
-                                    await oldDb.open();
-                                }
-                                await oldDb.storage.clear();
-                                console.log('已清空旧数据库内容');
-                                oldDb.close();
-                            } catch (clearError) {
-                                console.error('清空旧数据库也失败:', clearError);
-                            }
-                        }
-
-                        return true;
-                    } else {
-                        console.log('未发现旧数据库数据');
-                        // 即使没有数据，也尝试删除可能存在的空数据库
-                        try {
-                            if (oldDb.isOpen()) {
-                                oldDb.close();
-                            }
-                            await oldDb.delete();
-                            console.log('已删除空的旧数据库');
-                        } catch (deleteError) {
-                            // 删除失败可能是因为数据库不存在，这是正常的
-                            console.log('旧数据库不存在或已删除');
-                        }
-                        return false;
-                    }
-
-
-                    return false;
-                } catch (error) {
-                    console.error('数据迁移失败:', error);
-
-                    // 即使迁移失败，也尝试清理旧数据库连接
-                    if (oldDb) {
-                        try {
-                            if (oldDb.isOpen()) {
-                                oldDb.close();
-                                console.log('已关闭旧数据库连接');
-                            }
-                        } catch (closeError) {
-                            console.error('关闭旧数据库连接失败:', closeError);
-                        }
-                    }
-
-                    return false;
-                } finally {
-                    // 确保在任何情况下都记录迁移耗时
-                    const duration = Date.now() - startTime;
-                    console.log(`数据迁移操作完成，耗时: ${duration}ms, 成功: ${migrationSuccess}`);
-                }
-            }
-        }
-
-        const dataStorage = new OptimizedDataStorage();
-
-        // ==================================================================================================================
-        // ========================================== DIRECTOR MODE =========================================================
-        // ==================================================================================================================
-        let isDirectorMode = false;
-
-        function toggleDirectorMode() {
-            isDirectorMode = !isDirectorMode;
-
-            const chatRoomScreen = document.getElementById('chat-room-screen');
-            const messageInput = document.getElementById('message-input');
-            const expansionPanel = document.getElementById('chat-expansion-panel');
-
-            // Toggle active class for indicator and sticker bar visibility
-            chatRoomScreen.classList.toggle('director-mode-active', isDirectorMode);
-
-            // Toggle placeholder text
-            if (isDirectorMode) {
-                messageInput.placeholder = '输入导演指令...';
-            } else {
-                messageInput.placeholder = '输入消息...';
-            }
-
-            // Close the expansion panel
-            expansionPanel.classList.remove('visible');
-
-            showToast(`导演模式已${isDirectorMode ? '开启' : '关闭'}`);
-        }
-
-        function generateDirectorModePrompt(command, historyContext = '') {
-            const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-            if (!chat) return null;
-
-            // ================== 步骤 1: 修复世界书上下文 ==================
-            // 从单聊模式中复制世界书加载逻辑
-            const worldBooksBefore = (chat.worldBookIds || []).map(id => db.worldBooks.find(wb => wb.id === id && wb.position === 'before')).filter(Boolean).map(wb => wb.content).join('\n');
-            const worldBooksAfter = (chat.worldBookIds || []).map(id => db.worldBooks.find(wb => wb.id === id && wb.position === 'after')).filter(Boolean).map(wb => wb.content).join('\n');
-            const now = new Date();
-            const currentTime = `${now.getFullYear()}年${pad(now.getMonth() + 1)}月${pad(now.getDate())}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
-            // 构建基础指令
-            let prompt = `你的新任务是担任一名AI故事导演。你需要根据我下达的“剧情指令”，同时扮演以下两个角色，并演绎出他们之间的对话。\n`;
-            prompt += `核心规则：\n`;
-            prompt += `A. 当前时间：现在是 ${currentTime}。\n`;
-            prompt += `B. 纯线上互动：这是一个完全虚拟的线上聊天。你扮演的角色和我之间没有任何线下关系。严禁提出任何关于线下见面、现实世界互动或转为其他非本平台联系方式的建议。你必须始终保持在线角色的身份。\n\n`;
-
-            // 插入共同回忆
-            const favoritedJournals = (chat.memoryJournals || [])
-                .filter(j => j.isFavorited)
-                .map(j => `标题：${j.title}\n内容：${j.content}`)
-                .join('\n\n---\n\n');
-            if (favoritedJournals) {
-                prompt += `【共同回忆】\n这是你需要长期记住的、我们之间发生过的往事背景：\n${favoritedJournals}\n\n`;
-            }
-
-            // 插入剧情回顾
-            const historySection = historyContext ? `
-【剧情回顾】
-以下是最近发生的事情，请在此基础上继续发展剧情：
----
-${historyContext}
----
-
-` : '';
-            prompt += historySection;
-
-            // 定义角色
-            const roleA = { name: chat.myName || '我', persona: chat.myPersona || '一个普通人' };
-            const roleB = { name: chat.remarkName || chat.name, persona: chat.persona || '一个友好的人' };
-
-            // 插入世界书和角色定义
-            prompt += `角色和对话规则：\n`;
-            if (worldBooksBefore) {
-                prompt += `${worldBooksBefore}\n`;
-            }
-            prompt += `1.  **角色A**: \n    -   昵称: ${roleA.name}\n    -   人设: ${roleA.persona}\n`;
-            prompt += `2.  **角色B**: \n    -   昵称: ${roleB.name}\n    -   人设: ${roleB.persona}\n`;
-            if (worldBooksAfter) {
-                prompt += `${worldBooksAfter}\n`;
-            }
-            prompt += `3.  **本次剧情指令**: "${command}"\n`;
-            
-            // ================== 步骤 2: 补上互动能力 ==================
-            // 从单聊模式中复制互动规则
-            prompt += `4. 两个角色都可以发送和接收特殊格式的消息，请根据其内容和角色设定进行演绎，如：
-    - [${roleA.name}的表情包：xxx]：一个角色给另一个角色发送了一个表情包。
-    - [${roleA.name}发来了一张图片：]：一个角色给另一个角色发送了一张图片，你需要对图片内容做出回应。
-    - [${roleA.name}送来的礼物：xxx]：一个角色给另一个角色送了一个礼物，xxx是礼物的描述。
-    - [${roleA.name}的语音：xxx]：一个角色给另一个角色发送了一段内容为xxx的语音。
-    - [${roleA.name}发来的照片/视频：xxx]：一个角色给另一个角色分享了一个描述为xxx的照片或视频。
-    - [${roleA.name}给你转账：xxx元；备注：xxx]：一个角色给另一个角色转了一笔钱。
-    - [${roleA.name}引用“{被引用内容}”并回复：{回复内容}]：角色引用了某条历史消息并做出了新的回复。角色需要理解我引用的上下文并作出回应。
-    - [${roleA.name}撤回了一条消息：xxx]：角色撤回了刚刚发送的一条消息，xxx是被我撤回的原文。这可能意味着角色发错了、说错了话或者改变了主意。你需要根据角色的人设和他们当前对话的氛围对此作出自然的反应。例如，可以装作没看见并等待角色的下一句话，或好奇地问一句“怎么撤回啦？”。
-    - [system: xxx]：这是一条系统指令，用于设定场景或提供上下文，此条信息不应在对话中被直接提及，你只需理解其内容并应用到后续对话中。
-5. ✨重要✨ 当一个角色给另一个角色送礼物时，接收方必须通过发送一条指令来表示已接收礼物。格式必须为：[${roleA.name}已接收礼物] 或 [${roleB.name}已接收礼物]。
-6. ✨重要✨ 当一个角色给另一个角色转账时，接收方必须对此做出回应。格式必须为以下之一：
-    a) 接收转账: [${roleA.name}接收${roleB.name}的转账] 或 [${roleB.name}接收${roleA.name}的转账]
-    b) 退回转账: [${roleA.name}退回${roleB.name}的转账] 或 [${roleB.name}退回${roleA.name}的转账]
-7. ✨重要✨ 两个角色都可以主动给对方转账或送礼物。
-8. ✨重要✨ ${roleB.name}可以在对话中**积极地**改变自己的状态。格式为：[${roleB.name}更新状态为：xxx]。
-9. ✨重要✨ 两个角色都可以像真人一样撤回自己刚刚发送的消息。格式为：[${roleA.name}撤回了上一条消息：{原文}] 或 [${roleB.name}撤回了上一条消息：{原文}]。
-10. ✨重要✨ 两个角色都可以引用自己或对方的单独一条消息进行针对性的回复。
-11. 你的所有回复都必须直接是聊天内容，绝对不允许包含任何如[心理活动]、(动作)、*环境描写*等多余的、在括号或星号里的叙述性文本。
-`;
-
-            // ================== 步骤 3: 保留旧的表情包规则 (暂不修改) ==================
-            prompt += `12. 你拥有发送表情包的能力。这是一个可选功能。格式为：[${roleA.name}发送的表情包：图片URL] 或 [${roleB.name}发送的表情包：图片URL]。\n`;
-
-            // 最终输出格式
-            prompt += `13. 你的输出格式必须严格遵循以下格式，在每条消息前明确标注发言人昵称：
-    a) 普通消息: [${roleA.name}的消息：{消息内容}] 或 [${roleB.name}的消息：{消息内容}]
-    b) 礼物: [${roleA.name}送来的礼物：{礼物描述}] 或 [${roleB.name}送来的礼物：{礼物描述}]
-    c) 语音: [${roleA.name}的语音：{语音内容}] 或 [${roleB.name}的语音：{语音内容}]
-    d) 照片/视频: [${roleA.name}发来的照片/视频：{描述}] 或 [${roleB.name}发来的照片/视频：{描述}]
-    e) 转账: [${roleA.name}的转账：{金额}元；备注：{备注}] 或 [${roleB.name}的转账：{金额}元；备注：{备注}]
-    f) 表情包: [${roleA.name}发送的表情包：{表情包路径}] 或 [${roleB.name}发送的表情包：{表情包路径}]。注意：这里的路径不需要包含"https://i.postimg.cc/"，只需要提供后面的部分，例如 "害羞vHLfrV3K/1.jpg"。
-    g) 引用回复: [${roleA.name}引用“{某条消息内容}”并回复：{回复内容}] 或 [${roleB.name}引用“{某条消息内容}”并回复：{回复内容}]
-    h) 撤回消息(此条不显示): [${roleA.name}撤回了上一条消息：{被撤回消息的原文}] 或 [${roleB.name}撤回了上一条消息：{被撤回消息的原文}]
-    i) 接收礼物/转账或更新状态等特殊指令，两个角色均可使用，格式不变。
-14. **场景长度**: 请根据角色设定，参考剧情指令自然地生成一段对话，对话的总消息数应在15-25条，并根据当前行为/心情/地点变化实时更新${roleB.name}的状态。
-15. 不要主动结束对话，保持你的人设，自然地进行对话。`;
-
-            return prompt;
-        }
-
-        async function parseAndRenderScene(sceneText) {
-            const lines = sceneText.split('\n').filter(line => line.trim() !== '');
-            const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-            if (!chat) return;
-
-            const roleB_Name = chat.remarkName || chat.name;
-            const roleA_Name = chat.myName || '我';
-
-            for (const line of lines) {
-                const content = line.trim();
-                if (!content) continue;
-
-                let role, senderId;
+        const dexieDB = new Dexie('章鱼喷墨机DB');
+        dexieDB.version(1).stores({
+            storage: 'key, value'
+        });
+        dexieDB.version(2).stores({
+            characters: '&id',
+            groups: '&id',
+            worldBooks: '&id',
+            myStickers: '&id',
+            globalSettings: 'key'
+        }).upgrade(async tx => {
+            console.log("Upgrading database to version 2...");
+            const oldData = await tx.table('storage').get('章鱼喷墨机');
+            if (oldData && oldData.value) {
+                console.log("Old data found, starting migration.");
+                const data = JSON.parse(oldData.value);
+                if (data.characters) await tx.table('characters').bulkPut(data.characters);
+                if (data.groups) await tx.table('groups').bulkPut(data.groups);
+                if (data.worldBooks) await tx.table('worldBooks').bulkPut(data.worldBooks);
+                if (data.myStickers) await tx.table('myStickers').bulkPut(data.myStickers);
                 
-                // 使用正则表达式来判断说话人，更健壮
-                const speakerRegex = new RegExp(`^\\[(${roleA_Name}|${roleB_Name})`);
-                const match = content.match(speakerRegex);
-
-                if (match) {
-                    const speakerName = match[1];
-                    if (speakerName === roleA_Name) {
-                        role = 'user';
-                        senderId = 'user_me';
-                    } else if (speakerName === roleB_Name) {
-                        role = 'assistant';
-                        senderId = chat.id;
-                    } else {
-                        continue; // 如果说话人不是预期的两个角色之一，则跳过此行
-                    }
-                } else {
-                    // 如果没有匹配到，可能是AI生成的特殊指令，如更新状态
-                    // 我们可以暂时忽略这些，或者根据需要进行处理
-                    continue;
-                }
-
-                const message = {
-                    id: `msg_director_${Date.now()}_${Math.random()}`,
-                    role: role,
-                    content: content,
-                    parts: [{ type: 'text', text: content }],
-                    timestamp: Date.now(),
-                    senderId: senderId
+                const settingsToMigrate = {
+                    apiSettings: data.apiSettings || {},
+                    wallpaper: data.wallpaper || 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg',
+                    homeScreenMode: data.homeScreenMode || 'night',
+                    fontUrl: data.fontUrl || '',
+                    customIcons: data.customIcons || {}
                 };
 
-                chat.history.push(message);
-                addMessageBubble(message, currentChatId, currentChatType);
-                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 500)); // Simulate typing delay
+                const settingsPromises = Object.entries(settingsToMigrate).map(([key, value]) =>
+                    tx.table('globalSettings').put({ key, value })
+                );
+                await Promise.all(settingsPromises);
+                
+                await tx.table('storage').delete('章鱼喷墨机');
+                console.log("Migration complete. Old data removed.");
+            } else {
+                console.log("No old data found to migrate.");
             }
-            await saveData();
-            renderChatList();
-        }
+        });
 
-        async function executeDirectorCommand(commandText) {
-            if (isGenerating) return;
+        const saveData = async () => {
+            await dexieDB.transaction('rw', dexieDB.tables, async () => {
+                await dexieDB.characters.bulkPut(db.characters);
+                await dexieDB.groups.bulkPut(db.groups);
+                await dexieDB.worldBooks.bulkPut(db.worldBooks);
+                await dexieDB.myStickers.bulkPut(db.myStickers);
 
-            const { url, key, model } = db.apiSettings;
-            if (!url || !key || !model) {
-                showToast('请先在“api”应用中完成设置！');
-                switchScreen('api-settings-screen');
-                return;
-            }
-            
-            const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-            if (!chat) {
-                showToast('无法生成导演指令，请检查聊天对象是否存在。');
-                return;
-            }
-
-            // 获取历史记录作为上下文
-            const historySlice = chat.history.slice(-chat.maxMemory);
-            const historyContext = historySlice.map(msg => msg.content).join('\n');
-
-            const systemPrompt = generateDirectorModePrompt(commandText, historyContext);
-            if (!systemPrompt) {
-                showToast('无法生成导演指令，请检查聊天对象是否存在。');
-                return;
-            }
-
-            isGenerating = true;
-            typingIndicator.textContent = `导演正在构思场景...`;
-            typingIndicator.style.display = 'block';
-            messageArea.scrollTop = messageArea.scrollHeight;
-
-            try {
-                const requestBody = {
-                    model: model,
-                    messages: [{ role: 'user', content: systemPrompt }],
-                    temperature: 0.75,
+                const settingsToSave = {
+                    apiSettings: db.apiSettings,
+                    wallpaper: db.wallpaper,
+                    homeScreenMode: db.homeScreenMode,
+                    fontUrl: db.fontUrl,
+                    customIcons: db.customIcons
                 };
-
-                const endpoint = `${url}/v1/chat/completions`;
-                const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` };
-
-                const response = await fetch(endpoint, { method: 'POST', headers: headers, body: JSON.stringify(requestBody) });
-
-                if (!response.ok) {
-                    throw new Error(`API 错误: ${response.status} ${await response.text()}`);
-                }
-
-                const result = await response.json();
-                const sceneText = result.choices[0].message.content;
-
-                typingIndicator.style.display = 'none';
-                await parseAndRenderScene(sceneText);
-
-            } catch (error) {
-                console.error('导演模式执行失败:', error);
-                showToast(`导演模式执行失败: ${error.message}`);
-            } finally {
-                isGenerating = false;
-                typingIndicator.style.display = 'none';
-            }
-        }
-        // ==================================================================================================================
-
-
-        // 兼容性适配器 - 保持原有API接口
-        const saveData = async (data) => {
-            const dbData = data ? data : db;
-
-            // 分离消息数据和基础数据
-            const { characters, groups, pomodoroTasks, pomodoroSettings, homeWidgetSettings, ...baseData } = dbData;
-
-            // 保存基础数据
-            await dataStorage.saveData('章鱼喷墨机', baseData);
-
-            // 分别保存角色和群组数据（包含消息）
-            if (characters) {
-                for (const char of characters) {
-                    if (char.history && char.history.length > 0) {
-    await dataStorage.saveChatMessages(char.id, 'private', char.history);
-} else {
-    // 如果历史记录为空，则清空数据库中的消息
-    await dataStorage.clearChatMessages(char.id, 'private');
-}
-                    // 保存角色基础信息（不包含history）
-                    const { history, ...charData } = char;
-                    charData.history = []; // 保持兼容性
-                    await dataStorage.saveData(`character_${char.id}`, charData);
-                }
-            }
-
-            if (groups) {
-                for (const group of groups) {
-                    // 保存消息到分块存储
-                    if (group.history && group.history.length > 0) {
-    await dataStorage.saveChatMessages(group.id, 'group', group.history);
-} else {
-    // 如果历史记录为空，则清空数据库中的消息
-    await dataStorage.clearChatMessages(group.id, 'group');
-}
-                    // 保存群组基础信息（不包含history）
-                    const { history, ...groupData } = group;
-                    groupData.history = []; // 保持兼容性
-                    await dataStorage.saveData(`group_${group.id}`, groupData);
-                }
-            }
-
-            if(dbData.apiSettings){
-                await dataStorage.saveData('apiSettings', dbData.apiSettings);
-            }
-            if(dbData.customIcons){
-                await dataStorage.saveData('customIcons', dbData.customIcons);
-            }
-            if(dbData.apiPresets){
-                await dataStorage.saveData('apiPresets', dbData.apiPresets);
-            }
-            if(dbData.bubbleCssPresets){
-                await dataStorage.saveData('bubbleCssPresets', dbData.bubbleCssPresets);
-            }
-            if(dbData.myPersonaPresets){
-                await dataStorage.saveData('myPersonaPresets', dbData.myPersonaPresets);
-            }
-            if(dbData.globalCssPresets){
-                await dataStorage.saveData('globalCssPresets', dbData.globalCssPresets);
-            }
-            if(dbData.globalCss){
-                await dataStorage.saveData('globalCss', dbData.globalCss);
-            }
-            if(dbData.fontUrl){
-                await dataStorage.saveData('fontUrl', dbData.fontUrl);
-            }
-            if(dbData.homeScreenMode){
-                await dataStorage.saveData('homeScreenMode', dbData.homeScreenMode);
-            }
-            
-            if(dbData.forumPosts){
-    await dataStorage.saveData('forumPosts', dbData.forumPosts);
-}
-
-            if(dbData.wallpaper){
-                await dataStorage.saveData('wallpaper', dbData.wallpaper);
-            }
-            if(dbData.pomodoroTasks){
-                await dataStorage.saveData('pomodoroTasks', dbData.pomodoroTasks);
-            }
-            if(dbData.pomodoroSettings){
-                await dataStorage.saveData('pomodoroSettings', dbData.pomodoroSettings);
-            }
-            if(dbData.insWidgetSettings){
-                await dataStorage.saveData('insWidgetSettings', dbData.insWidgetSettings);
-            }
-            if(dbData.homeWidgetSettings){
-                await dataStorage.saveData('homeWidgetSettings', dbData.homeWidgetSettings);
-            }
-            return Promise.resolve();
+                await Promise.all(Object.entries(settingsToSave).map(([key, value]) =>
+                    dexieDB.globalSettings.put({ key, value })
+                ));
+            });
         };
 
         const loadData = async () => {
-            // 首先尝试数据迁移
-            await dataStorage.migrateFromOldStorage();
-
-            // 检查localStorage中的旧数据
-            const oldData = localStorage.getItem('gemini-chat-app-db');
-            if (oldData) {
-                console.log('检测到localStorage中的旧数据，开始迁移...');
-                await saveData(JSON.parse(oldData));
-                localStorage.removeItem('gemini-chat-app-db');
-                console.log('localStorage旧数据迁移完成并已清理');
-            }
-
-            // 额外的安全检查：确保旧数据库完全清理
-            try {
-                const safetyCheckDb = new Dexie('章鱼喷墨机DB');
-                safetyCheckDb.version(1).stores({
-                    storage: 'key, value, timestamp'
-                });
-
-                const residualData = await safetyCheckDb.storage.get('章鱼喷墨机');
-                if (residualData) {
-                    console.warn('发现残留的旧数据库数据，执行强制清理...');
-                    await safetyCheckDb.storage.clear();
-                    safetyCheckDb.close();
-                    await safetyCheckDb.delete();
-                    console.log('残留旧数据库已强制清理');
-                } else {
-                    safetyCheckDb.close();
-                }
-            } catch (safetyError) {
-                // 如果无法访问旧数据库，说明已经被正确删除
-                console.log('旧数据库安全检查完成（数据库不存在）');
-            }
-
-            // 加载基础数据
-            let data = await dataStorage.getData('章鱼喷墨机');
-            if (data) {
-                db = { ...db, ...data };
-            }
-
-            // 初始化默认值
-            if (!db.apiSettings) db.apiSettings = {};
-            if (!db.wallpaper) db.wallpaper = 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg';
-            if (!db.myStickers) db.myStickers = [];
-            if (!db.homeScreenMode) db.homeScreenMode = 'night';
-            if (!db.worldBooks) db.worldBooks = [];
-            if (!db.fontUrl) db.fontUrl = '';
-            if (!db.customIcons) db.customIcons = {};
-
-            // 加载预设数据
-            db.apiPresets = await dataStorage.getData('apiPresets') || [];
-            db.bubbleCssPresets = await dataStorage.getData('bubbleCssPresets') || [];
-            db.myPersonaPresets = await dataStorage.getData('myPersonaPresets') || [];
-            db.globalCssPresets = await dataStorage.getData('globalCssPresets') || [];
-            db.globalCss = await dataStorage.getData('globalCss') || '';
-            db.forumPosts = await dataStorage.getData('forumPosts') || [];
-
-            // 重建characters和groups列表
-            // 由于saveData时这两个字段被排除，需要从存储中重新构建
-            db.characters = [];
-            db.groups = [];
-
-            // 获取所有存储的键，找出角色和群组数据
-            const allKeys = await dataStorage.getAllKeys();
-            const characterKeys = allKeys.filter(key => key.startsWith('character_'));
-            const groupKeys = allKeys.filter(key => key.startsWith('group_'));
-
-            console.log(`发现 ${characterKeys.length} 个角色数据, ${groupKeys.length} 个群组数据`);
-
-            // 加载角色数据
-            const characterPromises = characterKeys.map(async (key) => {
-                const charId = key.replace('character_', '');
-                const charData = await dataStorage.getData(key);
-                if (charData) {
-                    // 按需加载消息历史
-                    charData.history = await dataStorage.getChatMessages(charId, 'private');
-
-                    // 设置默认值
-                    if (charData.isPinned === undefined) charData.isPinned = false;
-                    if (charData.status === undefined) charData.status = '在线';
-                    if (!charData.worldBookIds) charData.worldBookIds = [];
-                    if (charData.customBubbleCss === undefined) charData.customBubbleCss = '';
-                    if (charData.useCustomBubbleCss === undefined) charData.useCustomBubbleCss = false;
-                    if (!charData.memoryJournals) charData.memoryJournals = []; // Ensure memoryJournals exists
-                    if (!charData.journalWorldBookIds) charData.journalWorldBookIds = []; // 新增：确保字段存在
- 
-                    if (!charData.peekScreenSettings) {
-                       charData.peekScreenSettings = { wallpaper: '', customIcons: {}, unlockAvatar: '' };
-                    }
-                     return charData;
-                 }
-                return null;
-            });
-
-            // 加载群组数据
-            const groupPromises = groupKeys.map(async (key) => {
-                const groupId = key.replace('group_', '');
-                const groupData = await dataStorage.getData(key);
-                if (groupData) {
-                    // 按需加载消息历史
-                    groupData.history = await dataStorage.getChatMessages(groupId, 'group');
-
-                    // 设置默认值
-                    if (groupData.isPinned === undefined) groupData.isPinned = false;
-                    if (!groupData.worldBookIds) groupData.worldBookIds = [];
-                    if (groupData.customBubbleCss === undefined) groupData.customBubbleCss = '';
-                    if (groupData.useCustomBubbleCss === undefined) groupData.useCustomBubbleCss = false;
-
-                    return groupData;
-                }
-                return null;
-            });
-
-            // 等待所有数据加载完成
-            const [loadedCharacters, loadedGroups] = await Promise.all([
-                Promise.all(characterPromises),
-                Promise.all(groupPromises)
+            const [characters, groups, worldBooks, myStickers, settingsArray] = await Promise.all([
+                dexieDB.characters.toArray(),
+                dexieDB.groups.toArray(),
+                dexieDB.worldBooks.toArray(),
+                dexieDB.myStickers.toArray(),
+                dexieDB.globalSettings.toArray()
             ]);
 
-            // 过滤掉null值并赋值给db
-            db.characters = loadedCharacters.filter(char => char !== null);
-            db.groups = loadedGroups.filter(group => group !== null);
+            db.characters = characters;
+            db.groups = groups;
+            db.worldBooks = worldBooks;
+            db.myStickers = myStickers;
 
-            console.log(`成功加载 ${db.characters.length} 个角色, ${db.groups.length} 个群组`);
-            console.log('完整数据库对象:', db);
+            const settings = settingsArray.reduce((acc, { key, value }) => {
+                acc[key] = value;
+                return acc;
+            }, {});
 
-            // 启动性能监控和数据完整性检查
-            setTimeout(async () => {
-                dataStorage.getStorageInfo();
+            db.apiSettings = settings.apiSettings || {};
+            db.wallpaper = settings.wallpaper || 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg';
+            db.homeScreenMode = settings.homeScreenMode || 'night';
+            db.fontUrl = settings.fontUrl || '';
+            db.customIcons = settings.customIcons || {};
 
-                // 执行数据完整性验证
-                const validation = await validateDataIntegrity();
-                if (!validation.isValid) {
-                    console.warn('数据完整性检查发现问题:', validation.issues);
-                    // 可以选择显示警告或自动修复
-                }
-            }, 1000);
-
-
-
-            // 在 loadData 函数的末尾
-            if (!db.forumBindings) {
-                db.forumBindings = {
-                    worldBookIds: [],
-                    charIds: [],
-                    userPersonaIds: []
-                };
+            // Data integrity checks (can be kept)
+            db.characters.forEach(c => {
+                if (c.isPinned === undefined) c.isPinned = false;
+                if (c.status === undefined) c.status = '在线';
+                if (!c.worldBookIds) c.worldBookIds = [];
+                if (c.customBubbleCss === undefined) c.customBubbleCss = '';
+                if (c.useCustomBubbleCss === undefined) c.useCustomBubbleCss = false;
+            });
+            db.groups.forEach(g => {
+                if (g.isPinned === undefined) g.isPinned = false;
+                if (!g.worldBookIds) g.worldBookIds = [];
+                if (g.customBubbleCss === undefined) g.customBubbleCss = '';
+                if (g.useCustomBubbleCss === undefined) g.useCustomBubbleCss = false;
+            });
+            
+            // Handle old localStorage data if it exists
+            const oldLocalStorageData = localStorage.getItem('gemini-chat-app-db');
+            if(oldLocalStorageData) {
+                console.log("Found old localStorage data, migrating...");
+                // This is a simplified migration, assuming the structure is the same as the old IndexedDB data
+                const data = JSON.parse(oldLocalStorageData);
+                await dexieDB.transaction('rw', dexieDB.tables, async () => {
+                    if (data.characters) await dexieDB.characters.bulkPut(data.characters);
+                    if (data.groups) await dexieDB.groups.bulkPut(data.groups);
+                    // ... add other tables as needed
+                });
+                localStorage.removeItem('gemini-chat-app-db');
+                // Reload data after migration
+                await loadData();
             }
-
-            db.pomodoroTasks = await dataStorage.getData('pomodoroTasks') || [];
-            const loadedPomodoroSettings = await dataStorage.getData('pomodoroSettings');
-            db.pomodoroSettings = {
-                boundCharId: null,
-                userPersona: '',
-                focusBackground: '',
-                taskCardBackground: '',
-                encouragementMinutes: 25,
-                pokeLimit: 5,
-                globalWorldBookIds: [], // NEW: Initialize global world book IDs
-                ...loadedPomodoroSettings
-            };
-           db.insWidgetSettings = await dataStorage.getData('insWidgetSettings') || {
-               avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg',
-               bubble1: 'love u.',
-               avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg',
-               bubble2: 'miss u.'
-           };
-
-        db.homeWidgetSettings = await dataStorage.getData('homeWidgetSettings') || JSON.parse(JSON.stringify(defaultWidgetSettings));
-        if (!db.homeWidgetSettings.polaroidImage) {
-            db.homeWidgetSettings.polaroidImage = 'https://i.postimg.cc/XvFDdTKY/Smart-Select-20251013-023208.jpg';
-        }
-
-         return Promise.resolve();
-     };
+        };
 
         let notificationQueue = [];
         let isToastVisible = false;
@@ -8387,7 +7451,7 @@ ${historyContext}
                     db.insWidgetSettings.avatar2 = newSrc;
                 }
 
-                await saveData();
+                await dexieDB.globalSettings.put({ key: 'insWidgetSettings', value: db.insWidgetSettings });
                 setupHomeScreen(); // Re-render the home screen to show the new avatar
                 modal.classList.remove('visible');
                 showToast('头像已更新');
@@ -8482,7 +7546,7 @@ ${historyContext}
                }
                db.homeWidgetSettings.polaroidImage = newSrc;
 
-               await saveData();
+               await dexieDB.globalSettings.put({ key: 'homeWidgetSettings', value: db.homeWidgetSettings });
                
                updatePolaroidImage(newSrc);
 
@@ -8537,7 +7601,7 @@ ${historyContext}
                     try {
                         const compressedUrl = await compressImage(file, { quality: 0.8, maxWidth: 800, maxHeight: 800 });
                         db.pomodoroSettings.taskCardBackground = compressedUrl;
-                        await saveData();
+                        await dexieDB.globalSettings.put({ key: 'homeWidgetSettings', value: db.homeWidgetSettings });
                         applyPomodoroBackgrounds();
                         showToast('任务卡片背景已更新');
                     } catch (error) {
@@ -8767,7 +7831,7 @@ ${historyContext}
                 if (target.closest('.delete-journal-btn')) {
                     if (confirm('确定要删除这篇日记吗？')) {
                         character.memoryJournals = character.memoryJournals.filter(j => j.id !== journalId);
-                        await saveData();
+                        await dexieDB.characters.put(character);
                         renderJournalList();
                         showToast('日记已删除');
                     }
@@ -8823,7 +7887,7 @@ ${historyContext}
 
                     journal.title = titleEl.textContent.trim();
                     journal.content = contentEl.textContent.trim();
-                    await saveData();
+                    await dexieDB.characters.put(character);
 
                     titleEl.isContentEditable = false;
                     contentEl.isContentEditable = false;
@@ -8996,7 +8060,7 @@ ${historyContext}
                     chat.memoryJournals = [];
                 }
                 chat.memoryJournals.push(newJournal);
-                await saveData();
+                await dexieDB.groups.put(group);
 
                 renderJournalList();
                 showToast('新日记已生成！');
@@ -9088,7 +8152,7 @@ ${historyContext}
                 // Save unlock avatar
                 character.peekScreenSettings.unlockAvatar = document.getElementById('peek-unlock-avatar-url').value.trim();
 
-                await saveData();
+                await dexieDB.groups.put(group);
                 renderPeekScreen(); // Re-render to apply all changes
                 showToast('已保存！');
                 peekWallpaperModal.classList.remove('visible');
@@ -9835,7 +8899,7 @@ ${historyContext}
                    updateBubbleCssPreview(previewBox, preset.css, false, colorThemes[themeKey]);
                }
                (window.showToast && showToast('预设已应用到当前聊天并保存')) || alert('预设已应用（若页面支持）');
-               await saveData();
+               await dexieDB.groups.put(group);
            } catch(e){
                console.error('applyPresetToCurrentChat error', e);
            }
@@ -9983,7 +9047,7 @@ ${historyContext}
                    if (e) {
                        e.myPersona = p.persona || '';
                        e.myAvatar = p.avatar || '';
-                       await saveData();
+                       await dexieDB.groups.put(group);
                        (window.showToast && showToast('预设已应用并保存到当前聊天')) || console.log('预设已应用');
                        if (typeof loadSettingsToSidebar === 'function') try{ loadSettingsToSidebar(); }catch(e){}
                        if (typeof renderChatList === 'function') try{ renderChatList(); }catch(e){}
@@ -10346,7 +9410,7 @@ ${historyContext}
             // --- 新增逻辑结束 ---
 
             db.characters.push(newChar);
-            await saveData();
+            await dexieDB.groups.put(group);
             renderChatList();
             showToast(`角色“${newChar.remarkName}”导入成功！`);
         }
@@ -10523,14 +9587,14 @@ ${historyContext}
 
                         if (db.homeWidgetSettings[part] && db.homeWidgetSettings[part][prop] !== newValue) {
                             db.homeWidgetSettings[part][prop] = newValue;
-                            await saveData();
+                            await dexieDB.groups.put(group);
                             showToast('小组件已更新');
                         }
                     } else if (target.id === 'widget-signature') { // It's the signature
                         const newSignature = target.textContent.trim();
                         if (db.homeSignature !== newSignature) {
                             db.homeSignature = newSignature;
-                            await saveData();
+                            await dexieDB.groups.put(group);
                             showToast('签名已保存');
                         }
                     } else if (target.id === 'ins-widget-bubble-1' || target.id === 'ins-widget-bubble-2') { // It's the INS widget
@@ -10538,7 +9602,7 @@ ${historyContext}
                          const newText = target.textContent.trim();
                          if (db.insWidgetSettings[bubbleId] !== newText) {
                              db.insWidgetSettings[bubbleId] = newText;
-                             await saveData();
+                             await dexieDB.groups.put(group);
                              showToast('小组件文字已保存');
                          }
                     }
@@ -10675,7 +9739,7 @@ ${historyContext}
                 homeScreen.classList.remove('day-mode');
             }
             db.homeScreenMode = mode;
-            await saveData();
+            await dexieDB.groups.put(group);
         }
 
                 function setupCustomizeApp() {
@@ -10705,7 +9769,7 @@ ${historyContext}
                     }
                 }
 
-                await saveData();
+                await dexieDB.groups.put(group);
                 setupHomeScreen(); // 实时刷新主页
             });
             customizeForm.addEventListener('click', async (e) => {
@@ -10715,7 +9779,7 @@ ${historyContext}
                     if (db.customIcons) {
                         delete db.customIcons[iconId];
                     }
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     renderCustomizeForm(); // 重新渲染自定义页
                     setupHomeScreen(); // 刷新主页
                     showToast('图标已重置');
@@ -10725,7 +9789,7 @@ ${historyContext}
                 if (e.target.matches('#reset-widget-btn')) {
                     if (confirm('确定要将小部件恢复为默认设置吗？')) {
                         db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
-                        await saveData();
+                        await dexieDB.groups.put(group);
                         renderCustomizeForm(); // 重新渲染自定义页
                         setupHomeScreen(); // 刷新主页
                         showToast('小部件已恢复默认');
@@ -10736,7 +9800,7 @@ ${historyContext}
                 if (e.target.matches('#reset-widget-btn')) {
                     if (confirm('确定要将小部件恢复为默认设置吗？')) {
                         db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
-                        await saveData();
+                        await dexieDB.groups.put(group);
                         renderCustomizeForm(); // 重新渲染自定义页
                         setupHomeScreen(); // 刷新主页
                         showToast('小部件已恢复默认');
@@ -10885,7 +9949,7 @@ ${historyContext}
                     const newCss = globalCssTextarea.value;
                     db.globalCss = newCss;
                     applyGlobalCss(newCss);
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     showToast('全局样式已应用');
                 });
             }
@@ -11113,7 +10177,7 @@ ${historyContext}
                 label: chatItem.isPinned ? '取消置顶' : '置顶聊天',
                 action: async () => {
                     chatItem.isPinned = !chatItem.isPinned;
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     renderChatList();
                 }
             }, {
@@ -11290,7 +10354,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
  lastUserMessageTimestamp: null, // 新增：用于记录最后消息时间
                };
                 db.characters.push(newChar);
-                await saveData();
+                await dexieDB.groups.put(group);
                 renderChatList();
                 addCharModal.classList.remove('visible');
                 showToast(`角色“${newChar.remarkName}”创建成功！`);
@@ -11568,7 +10632,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                 chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
             }
 
-            await saveData();
+            await dexieDB.groups.put(group);
             currentPage = 1;
             renderMessages(false, true);
             renderChatList();
@@ -11630,7 +10694,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
             const deletedCount = selectedMessageIds.size;
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             chat.history = chat.history.filter(m => !selectedMessageIds.has(m.id));
-            await saveData();
+            await dexieDB.groups.put(group);
             currentPage = 1;
             renderMessages(false, true);
             renderChatList();
@@ -12172,7 +11236,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                 if (message.content.match(updateStatusRegex)) {
                     character.status = message.content.match(updateStatusRegex)[1];
                     chatRoomStatusText.textContent = character.status;
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     return;
                 }
                 if (message.content.match(giftReceivedRegex) && message.role === 'assistant') {
@@ -12185,7 +11249,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                         if (giftCardOnScreen) {
                             giftCardOnScreen.classList.add('received');
                         }
-                        await saveData();
+                        await dexieDB.groups.put(group);
                     }
                     return;
                 }
@@ -12204,7 +11268,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                             const statusElem = transferCardOnScreen.querySelector('.transfer-status');
                             if (statusElem) statusElem.textContent = statusToSet === 'received' ? '已收款' : '已退回';
                         }
-                        await saveData();
+                        await dexieDB.groups.put(group);
                     }
                 } else {
                     const bubbleElement = createMessageBubbleElement(message);
@@ -12327,7 +11391,7 @@ if (chat.history.length > 0 && chat.history.length % 100 === 0) {
     promptForBackupIfNeeded('history_milestone');
 }
 
-await dataStorage.addMessage(currentChatId, currentChatType, message);
+await dexieDB.groups.put(group);
 renderChatList();
 
     // 新增：发送后清空引用状态
@@ -12368,7 +11432,7 @@ async function withdrawMessage(messageId) {
     message.content = `[${myName} 撤回了一条消息：${cleanOriginalContent}]`;
 
     // 保存数据
-    await saveData();
+    await dexieDB.groups.put(group);
 
     // 重新渲染
     currentPage = 1;
@@ -12417,7 +11481,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await saveData();
+            await dexieDB.groups.put(group);
             renderChatList();
         }
 
@@ -12438,6 +11502,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
+            await dexieDB.groups.put(group);
             renderChatList();
             stickerModal.classList.remove('visible');
         }
@@ -12461,7 +11526,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await saveData();
+            await dexieDB.groups.put(group);
             renderChatList();
         }
 
@@ -12484,7 +11549,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await saveData();
+            await dexieDB.groups.put(group);
             renderChatList();
         }
 
@@ -12522,7 +11587,7 @@ return `${seconds}秒`;
                     }
                 });
             }
-            await saveData();
+            await dexieDB.groups.put(group);
             renderChatList();
         }
 
@@ -12562,7 +11627,7 @@ return `${seconds}秒`;
                     }
                 });
             }
-            await saveData();
+            await dexieDB.groups.put(group);
             renderChatList();
         }
 
@@ -12609,7 +11674,7 @@ return `${seconds}秒`;
 
             chat.history.push(visualMessage, contextMessage);
             addMessageBubble(visualMessage, currentChatId, currentChatType);
-            await saveData();
+            await dexieDB.groups.put(group);
             renderChatList();
         }
 
@@ -12743,7 +11808,7 @@ return `${seconds}秒`;
                 const count = endRange - startIndex;
 
                 chat.history.splice(startIndex, count);
-                await saveData();
+                await dexieDB.groups.put(group);
 
                 confirmModal.classList.remove('visible');
                 showToast(`已成功删除 ${count} 条消息`);
@@ -13316,7 +12381,6 @@ return `${seconds}秒`;
                                 };
                                 chat.history.push(message);
                                 addMessageBubble(message, targetChatId, targetChatType);
-                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                             }
                         } else {
                             // 原有逻辑处理其他格式
@@ -13361,12 +12425,12 @@ return `${seconds}秒`;
                                 };
                                 group.history.push(message);
                                 addMessageBubble(message, targetChatId, targetChatType);
-                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                             }
                         }
                     }
                 }
  
+                await dexieDB.groups.put(group);
                 renderChatList();
             }
         }
@@ -13401,7 +12465,7 @@ return `${seconds}秒`;
                 return;
             }
             
-            await saveData();
+            await dexieDB.groups.put(group);
             
             // 3. 重新渲染消息区域
             currentPage = 1; // 重置分页
@@ -13471,7 +12535,7 @@ return `${seconds}秒`;
                 }
                 if (confirm(`确定要删除这 ${selectedStickerIds.size} 个表情吗？`)) {
                     db.myStickers = db.myStickers.filter(s => !selectedStickerIds.has(s.id));
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     showToast('表情已删除');
                     // 退出管理模式
                     isStickerManageMode = false;
@@ -13533,7 +12597,7 @@ return `${seconds}秒`;
 
                 if (newStickers.length > 0) {
                     db.myStickers.push(...newStickers); // 一次性推入所有新表情
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     renderStickerGrid();
                     batchAddStickerModal.classList.remove('visible');
                     showToast(`成功导入 ${newStickers.length} 个新表情！`);
@@ -13580,7 +12644,7 @@ return `${seconds}秒`;
                     stickerData.id = `sticker_${Date.now()}`;
                     db.myStickers.push(stickerData);
                 }
-                await saveData();
+                await dexieDB.groups.put(group);
                 renderStickerGrid();
                 addStickerModal.classList.remove('visible');
                 showToast('表情包已保存');
@@ -13629,7 +12693,7 @@ return `${seconds}秒`;
                 if (sticker) {
                     if (confirm(`确定要删除表情“${sticker.name}”吗？`)) {
                         db.myStickers = db.myStickers.filter(s => s.id !== currentStickerActionTarget);
-                        await saveData();
+                        await dexieDB.groups.put(group);
                         renderStickerGrid();
                         showToast('表情已删除');
                     }
@@ -13772,7 +12836,7 @@ return `${seconds}秒`;
                     timestamp: Date.now()
                 };
                 character.history.push(contextMessage);
-                await saveData();
+                await dexieDB.groups.put(group);
                 renderChatList();
             }
             receiveTransferActionSheet.classList.remove('visible');
@@ -13802,14 +12866,14 @@ return `${seconds}秒`;
                 e.preventDefault();
                 const newFontUrl = fontUrlInput.value.trim();
                 db.fontUrl = newFontUrl;
-                await saveData();
+                await dexieDB.groups.put(group);
                 applyGlobalFont(newFontUrl);
                 showToast('新字体已应用！');
             });
             restoreDefaultFontBtn.addEventListener('click', async () => {
                 fontUrlInput.value = '';
                 db.fontUrl = '';
-                await saveData();
+                await dexieDB.groups.put(group);
                 applyGlobalFont('');
                 showToast('已恢复默认字体！');
             });
@@ -13936,7 +13000,7 @@ return `${seconds}秒`;
                 } else {
                     db.worldBooks.push({id: `wb_${Date.now()}`, name, content, position, category});
                 }
-                await saveData();
+                await dexieDB.groups.put(group);
                 showToast('世界书条目已保存');
                 renderWorldBookList();
                 switchScreen('world-book-screen');
@@ -13980,7 +13044,7 @@ return `${seconds}秒`;
                                 db.groups.forEach(group => {
                                     group.worldBookIds = (group.worldBookIds || []).filter(id => id !== bookId);
                                 });
-                                await saveData();
+                                await dexieDB.groups.put(group);
                                 renderWorldBookList();
                                 showToast('条目已删除');
                             }
@@ -14049,7 +13113,7 @@ return `${seconds}秒`;
                         ev.stopPropagation();
                         if (!confirm('确定要删除这个世界书条目吗？')) return;
                         db.worldBooks = db.worldBooks.filter(wb => wb.id !== book.id);
-                        await saveData();
+                        await dexieDB.groups.put(group);
                         renderWorldBookList();
                         showToast && showToast('世界书已删除');
                     });
@@ -14244,7 +13308,7 @@ return `${seconds}秒`;
                             });
                             char.chatBg = compressedUrl;
                             chatRoomScreen.style.backgroundImage = `url(${compressedUrl})`;
-                            await saveData();
+                            await dexieDB.groups.put(group);
                             showToast('聊天背景已更换');
                         } catch (error) {
                             showToast('背景压缩失败，请重试');
@@ -14258,7 +13322,7 @@ return `${seconds}秒`;
                 if (confirm(`你确定要清空与“${character.remarkName}”的所有聊天记录吗？这个操作是不可恢复的！`)) {
                     character.history = [];
                     character.status = '在线'; // 重置状态
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     renderMessages(false, true);
                     renderChatList();
                     // 更新聊天室顶部的状态显示
@@ -14285,7 +13349,7 @@ return `${seconds}秒`;
                     const group = db.groups.find(g => g.id === currentChatId);
                     if (group) group.worldBookIds = selectedIds;
                 }
-                await saveData();
+                await dexieDB.groups.put(group);
                 worldBookSelectionModal.classList.remove('visible');
                 showToast('世界书关联已更新');
             });
@@ -14328,7 +13392,7 @@ return `${seconds}秒`;
                 e.maxMemory = document.getElementById('setting-max-memory').value;
                 e.useCustomBubbleCss = document.getElementById('setting-use-custom-css').checked;
                 e.customBubbleCss = document.getElementById('setting-custom-bubble-css').value;
-                await saveData();
+                await dexieDB.groups.put(group);
                 showToast('设置已保存！');
                 chatRoomTitle.textContent = e.remarkName;
                 renderChatList();
@@ -14392,7 +13456,7 @@ return `${seconds}秒`;
         model: a.value,
         timePerceptionEnabled: document.getElementById('time-perception-switch').checked
     };
-    await saveData();
+    await dexieDB.groups.put(group);
     showToast('API设置已保存！')
 })
         }
@@ -14457,7 +13521,7 @@ return `${seconds}秒`;
                     try {
                         const r = await compressImage(n, {quality: 0.85, maxWidth: 1080, maxHeight: 1920});
                         db.wallpaper = r, applyWallpaper(r), t.style.backgroundImage = `url(${r})`;
-                        await saveData();
+                        await dexieDB.groups.put(group);
                         showToast('壁纸更换成功！');
                     } catch (s) {
                         showToast('壁纸压缩失败，请重试');
@@ -14510,7 +13574,7 @@ return `${seconds}秒`;
                     worldBookIds: []
                 };
                 db.groups.push(newGroup);
-                await saveData();
+                await dexieDB.groups.put(group);
                 renderChatList();
                 createGroupModal.classList.remove('visible');
                 showToast(`群聊“${groupName}”创建成功！`);
@@ -14578,7 +13642,7 @@ return `${seconds}秒`;
                         if (group) {
                             group.chatBg = compressedUrl;
                             chatRoomScreen.style.backgroundImage = `url(${compressedUrl})`;
-                            await saveData();
+                            await dexieDB.groups.put(group);
                             showToast('聊天背景已更换');
                         }
                     } catch (error) {
@@ -14591,7 +13655,7 @@ return `${seconds}秒`;
                 if (!group) return;
                 if (confirm(`你确定要清空群聊“${group.name}”的所有聊天记录吗？这个操作是不可恢复的！`)) {
                     group.history = [];
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     renderMessages(false, true);
                     renderChatList();
                     groupSettingsSidebar.classList.remove('open');
@@ -14631,7 +13695,7 @@ return `${seconds}秒`;
                     member.groupNickname = document.getElementById('edit-member-group-nickname').value;
                     member.realName = document.getElementById('edit-member-real-name').value;
                     member.persona = document.getElementById('edit-member-persona').value;
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     renderGroupMembersInSettings(group);
                     document.querySelectorAll(`.message-wrapper[data-sender-id="${member.id}"] .group-nickname`).forEach(el => {
                         el.textContent = member.groupNickname;
@@ -14685,7 +13749,7 @@ return `${seconds}秒`;
                     }
                 });
                 if (selectedCharIds.length > 0) {
-                    await saveData();
+                    await dexieDB.groups.put(group);
                     renderGroupMembersInSettings(group);
                     renderMessages(false, true);
                     showToast('已邀请新成员');
@@ -14706,7 +13770,7 @@ return `${seconds}秒`;
                 };
                 group.members.push(newMember);
                 sendInviteNotification(group, newMember.realName);
-                await saveData();
+                await dexieDB.groups.put(group);
                 renderGroupMembersInSettings(group);
                 renderMessages(false, true);
                 showToast(`新成员 ${newMember.groupNickname} 已加入`);
@@ -14843,7 +13907,7 @@ return `${seconds}秒`;
             group.useCustomBubbleCss = document.getElementById('setting-group-use-custom-css').checked;
             group.customBubbleCss = document.getElementById('setting-group-custom-bubble-css').value;
             updateCustomBubbleStyle(currentChatId, group.customBubbleCss, group.useCustomBubbleCss);
-            await saveData();
+            await dexieDB.groups.put(group);
             showToast('群聊设置已保存！');
             chatRoomTitle.textContent = group.name;
             renderChatList();
@@ -15058,7 +14122,7 @@ return `${seconds}秒`;
                     userPersonaIds: selectedUserPersonaIds,
                 };
 
-                await saveData();
+                await dexieDB.groups.put(group);
                 showToast('论坛绑定已更新');
                 modal.classList.remove('visible');
             });
@@ -15314,7 +14378,7 @@ function setupShareModal() {
             }
         });
 
-        await saveData();
+        await dexieDB.groups.put(group);
         renderChatList(); // 刷新聊天列表以显示新消息预览
         modal.classList.remove('visible');
         showToast(`成功分享给 ${selectedCharIds.length} 位联系人！`);
@@ -15503,7 +14567,7 @@ ${context}
             }));
 
             db.forumPosts = enhancedPosts;
-            await saveData();
+            await dexieDB.groups.put(group);
             renderForumPosts(db.forumPosts);
 
         } else {
