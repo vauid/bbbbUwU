@@ -209,7 +209,7 @@
             background-size: cover;
             background-position: center;
             transition: background-image 0.5s ease-in-out;
-            padding: 50px 0;
+            padding: 40px 5px 30px;
             /* New styles for swipe functionality */
            flex-direction: column;
            overflow: hidden; /* Hide overflow for the swiper */
@@ -540,6 +540,27 @@
                 transform: translateY(0);
                 opacity: 1;
             }
+        }
+        #message-edit-modal .modal-window {
+            width: 90%;
+            max-width: 400px;
+        }
+
+        #message-edit-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #fce4ec;
+            border-radius: 10px;
+            background-color: #fff;
+            transition: border-color 0.3s;
+            font-family: var(--font-family);
+            font-size: 15px;
+            resize: vertical; /* Allow vertical resizing */
+        }
+
+        #message-edit-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
         }
 
         #edit-group-member-modal,
@@ -4415,16 +4436,20 @@ border-top: none;
             font-weight: 600;
         }
 
-        /* --- Pomodoro Record Card in Chat --- */
+        /* --- Pomodoro Record Card in Chat (New Style) --- */
         .pomodoro-record-card {
-            width: 240px;
-            background: linear-gradient(135deg, #f5f7fa, #e9ecf2);
+            width: 230px;
+            background-color: #fff;
+            border: 2px solid #333;
             border-radius: var(--border-radius);
-            padding: 15px;
+            box-shadow: 4px 4px 0px #ddd;
+            padding: 10px;
+            display: flex;
+            align-items: center;
             cursor: pointer;
-            border: 1px solid #e0e5ec;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
             margin: 0 8px;
+            position: relative;
+            overflow: hidden;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -4433,38 +4458,40 @@ border-top: none;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
         }
 
-        .pomodoro-record-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #dce3ed;
-            margin-bottom: 10px;
-        }
-
-        .pomodoro-record-header svg {
-            width: 24px;
-            height: 24px;
-            fill: var(--accent-color);
+        .pomodoro-record-icon {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
             flex-shrink: 0;
         }
 
-        .pomodoro-record-header .title {
+        .pomodoro-record-body .task-name {
             font-size: 16px;
-            font-weight: 600;
+            font-weight: bold;
             color: #333;
+            font-family: 'Comic Sans MS', 'Chalkduster', 'Handwriting', cursive;
         }
 
-        .pomodoro-record-body .task-name {
-            font-size: 15px;
-            font-weight: 500;
+        .pomodoro-record-details {
+            font-size: 14px;
             color: #555;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            background-color: rgba(240, 240, 240, 0.9);
+            padding: 8px 12px;
+            margin-top: 10px;
+            border-radius: 10px;
+            line-height: 1.6;
+            display: none; /* 默认隐藏 */
+            animation: fadeIn 0.3s ease;
+            white-space: nowrap; /* 不换行 */
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
+
+        .pomodoro-record-details.active {
+            display: flex;
+        }
+
         /* --- New INS-Style Widget --- */
         .ins-widget {
             width: 100%;
@@ -4694,11 +4721,6 @@ border-top: none;
                     </svg>
                 </button>
             </div>
-            <div class="message-input-area" id="message-edit-bar" style="display: none;">
-                <input type="text" id="message-edit-input">
-                <button id="save-edit-btn" class="icon-btn send-btn">✓</button>
-                <button id="cancel-edit-btn" class="icon-btn" style="background-color: #aaa;">✗</button>
-            </div>
         </div>
         
         <div id="music-screen" class="screen"></div>
@@ -4792,6 +4814,22 @@ border-top: none;
         </div>
     </div>
     <input type="file" id="image-upload-input" accept="image/*" style="display:none;">
+    <!-- Message Edit Modal -->
+    <div id="message-edit-modal" class="modal-overlay">
+        <div class="modal-window">
+            <h3>编辑消息</h3>
+            <form id="message-edit-form">
+                <div class="form-group">
+                    <textarea id="message-edit-textarea" rows="6" required></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">保存</button>
+                    <button type="button" id="cancel-edit-modal-btn" class="btn btn-neutral" style="flex: 1;">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="add-char-modal" class="modal-overlay">
         <div class="modal-window">
             <h3>创建新角色</h3>
@@ -5603,17 +5641,6 @@ border-top: none;
 </div>
 
 <!-- Pomodoro Record Detail Modal -->
-<div id="pomodoro-record-detail-modal" class="modal-overlay">
-    <div class="modal-window" style="text-align: center;">
-        <h3>专注记录详情</h3>
-        <div id="pomodoro-record-detail-content" style="border: 2px dashed var(--accent-color); padding: 20px; margin: 15px 0; border-radius: 10px; background: #f5f7fa;">
-            <p><strong>任务名称:</strong> <span id="detail-task-name"></span></p>
-            <p><strong>专注时长:</strong> <span id="detail-duration"></span></p>
-            <p><strong>“戳一戳”次数:</strong> <span id="detail-poke-count"></span></p>
-        </div>
-        <button id="close-record-detail-btn" class="btn btn-primary" style="width: 100%;">关闭</button>
-    </div>
-</div>
 
 <!-- Pomodoro Create Task Modal -->
 <div id="pomodoro-create-modal" class="modal-overlay">
@@ -6129,10 +6156,6 @@ border-top: none;
             chatSettingsBtn = document.getElementById('chat-settings-btn'),
             settingsSidebar = document.getElementById('chat-settings-sidebar'),
             settingsForm = document.getElementById('chat-settings-form'),
-            messageEditBar = document.getElementById('message-edit-bar'),
-            messageEditInput = document.getElementById('message-edit-input'),
-            saveEditBtn = document.getElementById('save-edit-btn'),
-            cancelEditBtn = document.getElementById('cancel-edit-btn'),
             multiSelectBar = document.getElementById('multi-select-bar'),
             selectCount = document.getElementById('select-count'),
             deleteSelectedBtn = document.getElementById('delete-selected-btn');
@@ -6415,20 +6438,40 @@ border-top: none;
                 }
             }
 
-            // 添加单条消息（增量更新）
+            // 添加单条消息（增量更新 - 优化版）
             async addMessage(chatId, chatType, message) {
-                const startTime = Date.now();
                 try {
-                    // 获取当前消息
-                    const currentMessages = await this.getChatMessages(chatId, chatType);
-                    currentMessages.push(message);
+                    const lastChunk = await this.db.messageChunks
+                        .where({ chatId: chatId, chatType: chatType })
+                        .orderBy('chunkIndex')
+                        .last();
 
-                    // 重新保存（会自动分块）
-                    await this.saveChatMessages(chatId, chatType, currentMessages);
+                    if (lastChunk && lastChunk.messages.length < this.chunkSize) {
+                        lastChunk.messages.push(message);
+                        await this.db.messageChunks.put(lastChunk);
+                    } else {
+                        const newChunkIndex = lastChunk ? lastChunk.chunkIndex + 1 : 0;
+                        const newChunkId = `${chatId}_${chatType}_${newChunkIndex}`;
+                        const newChunk = {
+                            id: newChunkId,
+                            chatId: chatId,
+                            chatType: chatType,
+                            chunkIndex: newChunkIndex,
+                            messages: [message],
+                            timestamp: Date.now()
+                        };
+                        await this.db.messageChunks.put(newChunk);
+                    }
 
+                    const cacheKey = `messages_${chatId}_${chatType}`;
+                    const cachedMessages = this.getFromCache(cacheKey);
+                    if (cachedMessages) {
+                        cachedMessages.push(message);
+                        this.updateCache(cacheKey, cachedMessages);
+                    }
                     return true;
                 } catch (error) {
-                    console.error('添加消息失败:', error);
+                    console.error('添加消息失败 (Optimized):', error);
                     return false;
                 }
             }
@@ -6989,34 +7032,19 @@ ${historyContext}
             // 保存基础数据
             await dataStorage.saveData('章鱼喷墨机', baseData);
 
-            // 分别保存角色和群组数据（包含消息）
+            // 分别保存角色和群组数据（不包含消息历史）
             if (characters) {
                 for (const char of characters) {
-                    if (char.history && char.history.length > 0) {
-    await dataStorage.saveChatMessages(char.id, 'private', char.history);
-} else {
-    // 如果历史记录为空，则清空数据库中的消息
-    await dataStorage.clearChatMessages(char.id, 'private');
-}
-                    // 保存角色基础信息（不包含history）
+                    // 历史记录由 addMessage 等函数独立、增量地处理，这里不再重复保存
                     const { history, ...charData } = char;
-                    charData.history = []; // 保持兼容性
                     await dataStorage.saveData(`character_${char.id}`, charData);
                 }
             }
 
             if (groups) {
                 for (const group of groups) {
-                    // 保存消息到分块存储
-                    if (group.history && group.history.length > 0) {
-    await dataStorage.saveChatMessages(group.id, 'group', group.history);
-} else {
-    // 如果历史记录为空，则清空数据库中的消息
-    await dataStorage.clearChatMessages(group.id, 'group');
-}
-                    // 保存群组基础信息（不包含history）
+                    // 历史记录由 addMessage 等函数独立、增量地处理，这里不再重复保存
                     const { history, ...groupData } = group;
-                    groupData.history = []; // 保持兼容性
                     await dataStorage.saveData(`group_${group.id}`, groupData);
                 }
             }
@@ -7705,7 +7733,7 @@ ${historyContext}
                 const chat = db.characters.find(c => c.id === currentPomodoroTask.settings.boundCharId);
 
                 if (chat) {
-                    const messageContent = `[pomodoro-record:{"taskName":"${taskName}","duration":"${duration}","pokeCount":"${pokeCount}"}]`;
+                    const messageContent = `[专注记录] 任务：${taskName}，时长：${duration}，期间与 ${chat.realName} 互动 ${pokeCount} 次。`;
                     const message = {
                         id: `msg_pomodoro_${Date.now()}`,
                         role: 'user',
@@ -7728,22 +7756,6 @@ ${historyContext}
                 switchScreen('pomodoro-screen');
             });
 
-            // --- NEW: Record Detail Modal Listeners ---
-            const recordDetailModal = document.getElementById('pomodoro-record-detail-modal');
-            const closeRecordDetailBtn = document.getElementById('close-record-detail-btn');
-
-            if (recordDetailModal && closeRecordDetailBtn) {
-                closeRecordDetailBtn.addEventListener('click', () => {
-                    recordDetailModal.classList.remove('visible');
-                });
-
-                recordDetailModal.addEventListener('click', (e) => {
-                    if (e.target === recordDetailModal) {
-                        recordDetailModal.classList.remove('visible');
-                    }
-                });
-            }
-            // --- END NEW ---
 
             function handlePomodoroCompletion() {
                 const certModal = document.getElementById('pomodoro-certificate-modal');
@@ -11360,8 +11372,20 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
             });
             messageArea.addEventListener('touchend', () => clearTimeout(longPressTimer));
             messageArea.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-            saveEditBtn.addEventListener('click', saveMessageEdit);
-            cancelEditBtn.addEventListener('click', cancelMessageEdit);
+            
+            const messageEditForm = document.getElementById('message-edit-form');
+            if(messageEditForm) {
+                messageEditForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    saveMessageEdit();
+                });
+            }
+
+            const cancelEditModalBtn = document.getElementById('cancel-edit-modal-btn');
+            if(cancelEditModalBtn) {
+                cancelEditModalBtn.addEventListener('click', cancelMessageEdit);
+            }
+
             cancelMultiSelectBtn.addEventListener('click', exitMultiSelectMode);
             deleteSelectedBtn.addEventListener('click', deleteSelectedMessages);
             
@@ -11474,65 +11498,68 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
             exitMultiSelectMode();
             editingMessageId = messageId;
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
-           //...
-const message = chat.history.find(m => m.id === messageId);
-if (!message) return;
+            const message = chat.history.find(m => m.id === messageId);
+            if (!message) return;
 
-// --- 从这里开始是替换后的新代码 ---
-let contentToEdit = message.content;
-const plainTextMatch = contentToEdit.match(/^\[.*?：([\s\S]*)\]$/);
-if (plainTextMatch && plainTextMatch[1]) {
-    contentToEdit = plainTextMatch[1].trim();
-}
-// --- 到这里结束 ---
-contentToEdit = contentToEdit.replace(/\[发送时间:.*?\]/g, '').trim(); // <--- 加上这一行
-messageEditInput.value = contentToEdit;
+            const modal = document.getElementById('message-edit-modal');
+            const textarea = document.getElementById('message-edit-textarea');
 
-            messageInputDefault.style.display = 'none';
-            messageEditBar.style.display = 'flex';
-            messageEditInput.focus();
+            let contentToEdit = message.content;
+            const plainTextMatch = contentToEdit.match(/^\[.*?：([\s\S]*)\]$/);
+            if (plainTextMatch && plainTextMatch[1]) {
+                contentToEdit = plainTextMatch[1].trim();
+            }
+            contentToEdit = contentToEdit.replace(/\[发送时间:.*?\]/g, '').trim();
+            
+            textarea.value = contentToEdit;
+            modal.classList.add('visible');
+            textarea.focus();
         }
 
         async function saveMessageEdit() {
+            const newText = document.getElementById('message-edit-textarea').value.trim();
+            if (!newText || !editingMessageId) {
+                cancelMessageEdit();
+                return;
+            }
+
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             const messageIndex = chat.history.findIndex(m => m.id === editingMessageId);
-            if (messageIndex === -1) return;
-           // ...
-const newTextRaw = messageEditInput.value.trim();
-if (newTextRaw) {
-    let newText = newTextRaw; // 先把干净的文字存起来
-
-
-
-
-    const oldContent = chat.history[messageIndex].content;
-    const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
-    let newContent;
-
-    if (prefixMatch && prefixMatch[1]) {
-        const prefix = prefixMatch[1];
-        newContent = `${prefix}${newText}]`;
-    } else {
-        newContent = newTextRaw;
-    }
-
-    chat.history[messageIndex].content = newContent;
-
-    if (chat.history[messageIndex].parts) {
-        chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
-    }
-                await saveData();
-                currentPage = 1;
-                renderMessages(false, true);
-                renderChatList();
+            if (messageIndex === -1) {
+                cancelMessageEdit();
+                return;
             }
+
+            const oldContent = chat.history[messageIndex].content;
+            const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
+            let newContent;
+
+            if (prefixMatch && prefixMatch[1]) {
+                const prefix = prefixMatch[1];
+                newContent = `${prefix}${newText}]`;
+            } else {
+                newContent = newText;
+            }
+
+            chat.history[messageIndex].content = newContent;
+            if (chat.history[messageIndex].parts) {
+                chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
+            }
+
+            await saveData();
+            currentPage = 1;
+            renderMessages(false, true);
+            renderChatList();
+            
             cancelMessageEdit();
         }
 
         function cancelMessageEdit() {
             editingMessageId = null;
-            messageInputDefault.style.display = 'flex';
-            messageEditBar.style.display = 'none';
+            const modal = document.getElementById('message-edit-modal');
+            if (modal) {
+                modal.classList.remove('visible');
+            }
         }
 
         function enterMultiSelectMode(initialMessageId) {
@@ -11772,37 +11799,40 @@ if (newTextRaw) {
             const groupGiftMatch = content.match(groupGiftRegex);
             const imageRecogMatch = content.match(imageRecogRegex);
             const textMatch = content.match(textRegex);
-            const pomodoroRecordRegex = /\[pomodoro-record:([\s\S]+)\]/;
+            const pomodoroRecordRegex = /\[专注记录\]\s*任务：([\s\S]+?)，时长：([\s\S]+?)，期间与 .*? 互动 (\d+)\s*次。/;
             const pomodoroMatch = content.match(pomodoroRecordRegex);
 
             if (pomodoroMatch) {
-                try {
-                    const data = JSON.parse(pomodoroMatch[1]);
-                    bubbleElement = document.createElement('div');
-                    bubbleElement.className = 'pomodoro-record-card';
-                    bubbleElement.dataset.details = pomodoroMatch[1]; // Store details for click event
-                    bubbleElement.innerHTML = `
-                        <div class="pomodoro-record-header">
-                            <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20M16.24 7.76C15.07 6.58 13.53 6 12 6V12L7.76 16.24C10.1 18.58 13.9 18.58 16.24 16.24C18.58 13.9 18.58 10.1 16.24 7.76Z"></path></svg>
-                            <span class="title">专注记录</span>
-                        </div>
-                        <div class="pomodoro-record-body">
-                            <p class="task-name">${data.taskName}</p>
-                        </div>
-                    `;
-                    bubbleElement.addEventListener('click', () => {
-                        const detailModal = document.getElementById('pomodoro-record-detail-modal');
-                        const details = JSON.parse(bubbleElement.dataset.details);
-                        document.getElementById('detail-task-name').textContent = details.taskName;
-                        document.getElementById('detail-duration').textContent = details.duration;
-                        document.getElementById('detail-poke-count').textContent = details.pokeCount;
-                        detailModal.classList.add('visible');
-                    });
-                } catch (e) {
-                    bubbleElement = document.createElement('div');
-                    bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
-                    bubbleElement.textContent = content;
-                }
+                const taskName = pomodoroMatch[1];
+                const duration = pomodoroMatch[2];
+                const pokeCount = pomodoroMatch[3];
+
+                bubbleElement = document.createElement('div');
+                bubbleElement.className = 'pomodoro-record-card';
+                
+                const details = { taskName, duration, pokeCount };
+                
+                bubbleElement.innerHTML = `
+                    <img src="https://i.postimg.cc/sgdS9khZ/chan-122.png" class="pomodoro-record-icon" alt="pomodoro complete">
+                    <div class="pomodoro-record-body">
+                        <p class="task-name">${taskName}</p>
+                    </div>
+                `;
+
+
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'pomodoro-record-details';
+                detailsDiv.innerHTML = `
+                    <p><strong>任务名称:</strong> ${taskName}</p>
+                    <p><strong>专注时长:</strong> ${duration}</p>
+                    <p><strong>“戳一戳”次数:</strong> ${pokeCount}</p>
+                `;
+                wrapper.appendChild(detailsDiv);
+
+                bubbleElement.addEventListener('click', () => {
+                    detailsDiv.classList.toggle('active');
+                });
+
             } else if ((isSent && sentStickerMatch && stickerData) || (!isSent && receivedStickerMatch)) {
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = 'image-bubble';
@@ -12275,7 +12305,8 @@ if (chat.history.length > 0 && chat.history.length % 100 === 0) {
     promptForBackupIfNeeded('history_milestone');
 }
 
-await saveData();
+await dataStorage.addMessage(currentChatId, currentChatType, message); // Efficiently save the new message
+await saveData(); // Save non-history data like timestamps
 renderChatList();
 
     // 新增：发送后清空引用状态
@@ -12650,13 +12681,37 @@ return `${seconds}秒`;
                 const endIndex = endRange;
                 const messagesToDelete = chat.history.slice(startIndex, endIndex);
 
-                // Show last 5 messages as preview
-                const previewMessages = messagesToDelete.slice(-5);
-                previewBox.innerHTML = previewMessages.map(msg => {
-                    const contentMatch = msg.content.match(/\[.*?的消息：([\s\S]+)\]/);
-                    const text = contentMatch ? contentMatch[1] : msg.content;
-                    return `<p>${msg.role === 'user' ? '我' : chat.remarkName || '对方'}: ${text.substring(0, 50)}...</p>`;
-                }).join('');
+                // --- NEW PREVIEW LOGIC ---
+                let previewHtml = '';
+                const totalToDelete = messagesToDelete.length;
+
+                if (totalToDelete <= 4) {
+                    // If 4 or fewer messages, show all of them
+                    previewHtml = messagesToDelete.map(msg => {
+                        const contentMatch = msg.content.match(/\[.*?的消息：([\s\S]+)\]/);
+                        const text = contentMatch ? contentMatch[1] : msg.content;
+                        return `<p>${msg.role === 'user' ? '我' : chat.remarkName || '对方'}: ${text.substring(0, 50)}...</p>`;
+                    }).join('');
+                } else {
+                    // If more than 4, show first 2, ellipsis, and last 2
+                    const firstTwo = messagesToDelete.slice(0, 2);
+                    const lastTwo = messagesToDelete.slice(-2);
+
+                    const firstTwoHtml = firstTwo.map(msg => {
+                        const contentMatch = msg.content.match(/\[.*?的消息：([\s\S]+)\]/);
+                        const text = contentMatch ? contentMatch[1] : msg.content;
+                        return `<p>${msg.role === 'user' ? '我' : chat.remarkName || '对方'}: ${text.substring(0, 50)}...</p>`;
+                    }).join('');
+
+                    const lastTwoHtml = lastTwo.map(msg => {
+                        const contentMatch = msg.content.match(/\[.*?的消息：([\s\S]+)\]/);
+                        const text = contentMatch ? contentMatch[1] : msg.content;
+                        return `<p>${msg.role === 'user' ? '我' : chat.remarkName || '对方'}: ${text.substring(0, 50)}...</p>`;
+                    }).join('');
+
+                    previewHtml = `${firstTwoHtml}<p style="text-align: center; color: #999; margin: 5px 0;">...</p>${lastTwoHtml}`;
+                }
+                previewBox.innerHTML = previewHtml;
 
                 deleteChunkModal.classList.remove('visible');
                 confirmModal.classList.add('visible');
