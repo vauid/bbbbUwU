@@ -9654,52 +9654,52 @@ border-top: none;
             updatePageIndicator(currentPageIndex);
 
             // --- Touch Events ---
-            homeScreen.addEventListener('touchstart', (e) => {
-                if (e.target.closest('a') || e.target.closest('[contenteditable]')) return;
+            swiper.addEventListener('touchstart', (e) => {
+                // No longer need to check for target, the whole area is swipeable
                 isDragging = true;
                 touchStartX = e.changedTouches[0].screenX;
                 touchEndX = e.changedTouches[0].screenX; // Reset on start
             }, { passive: true });
 
-            homeScreen.addEventListener('touchmove', (e) => {
+            swiper.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
                 touchEndX = e.changedTouches[0].screenX;
             }, { passive: true });
 
-            homeScreen.addEventListener('touchend', (e) => {
+            swiper.addEventListener('touchend', (e) => {
                 if (!isDragging) return;
                 isDragging = false;
                 handleSwipe();
             });
 
             // --- Mouse Events ---
-            homeScreen.addEventListener('mousedown', (e) => {
-                if (e.target.closest('a') || e.target.closest('[contenteditable]')) return;
+            swiper.addEventListener('mousedown', (e) => {
+                // Prevent default browser action (like dragging a link)
                 e.preventDefault();
                 isDragging = true;
                 touchStartX = e.screenX;
                 touchEndX = e.screenX; // Reset on start
-                homeScreen.style.cursor = 'grabbing';
+                swiper.style.cursor = 'grabbing';
             });
 
-            homeScreen.addEventListener('mousemove', (e) => {
+            swiper.addEventListener('mousemove', (e) => {
                 if (isDragging) {
                     touchEndX = e.screenX;
                 }
             });
 
-            homeScreen.addEventListener('mouseup', (e) => {
+            swiper.addEventListener('mouseup', (e) => {
                 if (isDragging) {
                     isDragging = false;
-                    homeScreen.style.cursor = 'grab';
+                    swiper.style.cursor = 'grab';
                     handleSwipe();
                 }
             });
 
-            homeScreen.addEventListener('mouseleave', (e) => {
+            swiper.addEventListener('mouseleave', (e) => {
                 if (isDragging) {
                     isDragging = false;
-                    homeScreen.style.cursor = 'grab';
+                    swiper.style.cursor = 'grab';
                     // Reset positions to cancel swipe
                     touchStartX = 0;
                     touchEndX = 0;
