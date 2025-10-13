@@ -6534,6 +6534,84 @@ border-top: none;
             previewContainer.appendChild(receivedBubble);
             previewContainer.appendChild(sentBubble);
         }
+        const dataStorage = {
+            getStorageInfo: async function() {
+                const stringify = (obj) => {
+                    try {
+                        // Handle potential circular references, although unlikely with Dexie data
+                        return JSON.stringify(obj).length;
+                    } catch (e) {
+                        console.warn("Could not stringify object for size calculation:", obj, e);
+                        return 0;
+                    }
+                };
+
+                let categorizedSizes = {
+                    messages: 0,
+                    charactersAndGroups: 0,
+                    worldAndForum: 0,
+                    personalization: 0,
+                    apiAndCore: 0,
+                    other: 0
+                };
+
+                // Ensure db is loaded, this is a safeguard.
+                if (!db || !db.characters) {
+                    await loadData();
+                }
+
+                // 1. Messages (History)
+                (db.characters || []).forEach(char => {
+                    categorizedSizes.messages += stringify(char.history);
+                });
+                (db.groups || []).forEach(group => {
+                    categorizedSizes.messages += stringify(group.history);
+                });
+
+                // 2. Characters and Groups (metadata)
+                (db.characters || []).forEach(char => {
+                    const charWithoutHistory = { ...char, history: undefined };
+                    categorizedSizes.charactersAndGroups += stringify(charWithoutHistory);
+                });
+                (db.groups || []).forEach(group => {
+                    const groupWithoutHistory = { ...group, history: undefined };
+                    categorizedSizes.charactersAndGroups += stringify(groupWithoutHistory);
+                });
+
+                // 3. World and Forum
+                categorizedSizes.worldAndForum += stringify(db.worldBooks);
+                categorizedSizes.worldAndForum += stringify(db.forumPosts);
+                categorizedSizes.worldAndForum += stringify(db.forumBindings);
+
+                // 4. Personalization
+                categorizedSizes.personalization += stringify(db.myStickers);
+                categorizedSizes.personalization += stringify(db.wallpaper);
+                categorizedSizes.personalization += stringify(db.homeScreenMode);
+                categorizedSizes.personalization += stringify(db.fontUrl);
+                categorizedSizes.personalization += stringify(db.customIcons);
+                categorizedSizes.personalization += stringify(db.bubbleCssPresets);
+                categorizedSizes.personalization += stringify(db.myPersonaPresets);
+                categorizedSizes.personalization += stringify(db.globalCss);
+                categorizedSizes.personalization += stringify(db.globalCssPresets);
+                categorizedSizes.personalization += stringify(db.homeSignature);
+                categorizedSizes.personalization += stringify(db.pomodoroTasks);
+                categorizedSizes.personalization += stringify(db.pomodoroSettings);
+                categorizedSizes.personalization += stringify(db.insWidgetSettings);
+                categorizedSizes.personalization += stringify(db.homeWidgetSettings);
+
+                // 5. API and Core
+                categorizedSizes.apiAndCore += stringify(db.apiSettings);
+                categorizedSizes.apiAndCore += stringify(db.apiPresets);
+
+                // Total size
+                const totalSize = Object.values(categorizedSizes).reduce((sum, size) => sum + size, 0);
+
+                return {
+                    totalSize,
+                    categorizedSizes
+                };
+            }
+        };
 
         function setupStorageAnalysisScreen() {
             const screen = document.getElementById('storage-analysis-screen');
