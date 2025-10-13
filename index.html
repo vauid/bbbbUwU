@@ -13993,7 +13993,13 @@ return `${seconds}秒`;
             const startTime = Date.now();
             try {
                 // 1. Clear all existing data using the new storage system
-                await dataStorage.clearAll();
+                await Promise.all([
+                    dexieDB.characters.clear(),
+                    dexieDB.groups.clear(),
+                    dexieDB.worldBooks.clear(),
+                    dexieDB.myStickers.clear(),
+                    dexieDB.globalSettings.clear()
+                ]);
                 showToast('正在清空旧数据...');
 
                 let convertedData = data;
