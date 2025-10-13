@@ -7831,7 +7831,7 @@ border-top: none;
                 if (target.closest('.delete-journal-btn')) {
                     if (confirm('确定要删除这篇日记吗？')) {
                         character.memoryJournals = character.memoryJournals.filter(j => j.id !== journalId);
-                        await dexieDB.characters.put(character);
+                        await saveData();
                         renderJournalList();
                         showToast('日记已删除');
                     }
@@ -7840,7 +7840,7 @@ border-top: none;
 
                 if (target.closest('.favorite-journal-btn')) {
                     journal.isFavorited = !journal.isFavorited;
-                    await saveData();
+                    await dexieDB.characters.put(character);
                     target.closest('.favorite-journal-btn').classList.toggle('favorited', journal.isFavorited);
                     showToast(journal.isFavorited ? '已收藏' : '已取消收藏');
                     return;
@@ -7887,7 +7887,7 @@ border-top: none;
 
                     journal.title = titleEl.textContent.trim();
                     journal.content = contentEl.textContent.trim();
-                    await dexieDB.characters.put(character);
+                    await saveData();
 
                     titleEl.isContentEditable = false;
                     contentEl.isContentEditable = false;
@@ -8060,7 +8060,7 @@ border-top: none;
                     chat.memoryJournals = [];
                 }
                 chat.memoryJournals.push(newJournal);
-                await dexieDB.groups.put(group);
+                await saveData();
 
                 renderJournalList();
                 showToast('新日记已生成！');
@@ -8152,7 +8152,7 @@ border-top: none;
                 // Save unlock avatar
                 character.peekScreenSettings.unlockAvatar = document.getElementById('peek-unlock-avatar-url').value.trim();
 
-                await dexieDB.groups.put(group);
+                await saveData();
                 renderPeekScreen(); // Re-render to apply all changes
                 showToast('已保存！');
                 peekWallpaperModal.classList.remove('visible');
@@ -9047,7 +9047,7 @@ border-top: none;
                    if (e) {
                        e.myPersona = p.persona || '';
                        e.myAvatar = p.avatar || '';
-                       await dexieDB.groups.put(group);
+                       await saveData();
                        (window.showToast && showToast('预设已应用并保存到当前聊天')) || console.log('预设已应用');
                        if (typeof loadSettingsToSidebar === 'function') try{ loadSettingsToSidebar(); }catch(e){}
                        if (typeof renderChatList === 'function') try{ renderChatList(); }catch(e){}
@@ -9410,7 +9410,7 @@ border-top: none;
             // --- 新增逻辑结束 ---
 
             db.characters.push(newChar);
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
             showToast(`角色“${newChar.remarkName}”导入成功！`);
         }
@@ -9769,7 +9769,7 @@ border-top: none;
                     }
                 }
 
-                await dexieDB.groups.put(group);
+                await saveData();
                 setupHomeScreen(); // 实时刷新主页
             });
             customizeForm.addEventListener('click', async (e) => {
@@ -9789,7 +9789,7 @@ border-top: none;
                 if (e.target.matches('#reset-widget-btn')) {
                     if (confirm('确定要将小部件恢复为默认设置吗？')) {
                         db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
-                        await dexieDB.groups.put(group);
+                        await saveData();
                         renderCustomizeForm(); // 重新渲染自定义页
                         setupHomeScreen(); // 刷新主页
                         showToast('小部件已恢复默认');
@@ -9800,7 +9800,7 @@ border-top: none;
                 if (e.target.matches('#reset-widget-btn')) {
                     if (confirm('确定要将小部件恢复为默认设置吗？')) {
                         db.homeWidgetSettings = JSON.parse(JSON.stringify(defaultWidgetSettings));
-                        await dexieDB.groups.put(group);
+                        await saveData();
                         renderCustomizeForm(); // 重新渲染自定义页
                         setupHomeScreen(); // 刷新主页
                         showToast('小部件已恢复默认');
@@ -10354,7 +10354,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
  lastUserMessageTimestamp: null, // 新增：用于记录最后消息时间
                };
                 db.characters.push(newChar);
-                await dexieDB.groups.put(group);
+                await saveData();
                 renderChatList();
                 addCharModal.classList.remove('visible');
                 showToast(`角色“${newChar.remarkName}”创建成功！`);
@@ -10632,7 +10632,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                 chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
             }
 
-            await dexieDB.groups.put(group);
+            await saveData();
             currentPage = 1;
             renderMessages(false, true);
             renderChatList();
@@ -10694,7 +10694,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
             const deletedCount = selectedMessageIds.size;
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             chat.history = chat.history.filter(m => !selectedMessageIds.has(m.id));
-            await dexieDB.groups.put(group);
+            await saveData();
             currentPage = 1;
             renderMessages(false, true);
             renderChatList();
@@ -11391,7 +11391,7 @@ if (chat.history.length > 0 && chat.history.length % 100 === 0) {
     promptForBackupIfNeeded('history_milestone');
 }
 
-await dexieDB.groups.put(group);
+await saveData();
 renderChatList();
 
     // 新增：发送后清空引用状态
@@ -11432,7 +11432,7 @@ async function withdrawMessage(messageId) {
     message.content = `[${myName} 撤回了一条消息：${cleanOriginalContent}]`;
 
     // 保存数据
-    await dexieDB.groups.put(group);
+    await saveData();
 
     // 重新渲染
     currentPage = 1;
@@ -11481,7 +11481,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
         }
 
@@ -11502,7 +11502,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
             stickerModal.classList.remove('visible');
         }
@@ -11526,7 +11526,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
         }
 
@@ -11549,7 +11549,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
         }
 
@@ -11587,7 +11587,7 @@ return `${seconds}秒`;
                     }
                 });
             }
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
         }
 
@@ -11627,7 +11627,7 @@ return `${seconds}秒`;
                     }
                 });
             }
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
         }
 
@@ -11674,7 +11674,7 @@ return `${seconds}秒`;
 
             chat.history.push(visualMessage, contextMessage);
             addMessageBubble(visualMessage, currentChatId, currentChatType);
-            await dexieDB.groups.put(group);
+            await saveData();
             renderChatList();
         }
 
@@ -12430,7 +12430,7 @@ return `${seconds}秒`;
                     }
                 }
  
-                await dexieDB.groups.put(group);
+                await saveData();
                 renderChatList();
             }
         }
@@ -12465,7 +12465,7 @@ return `${seconds}秒`;
                 return;
             }
             
-            await dexieDB.groups.put(group);
+            await saveData();
             
             // 3. 重新渲染消息区域
             currentPage = 1; // 重置分页
@@ -12597,7 +12597,7 @@ return `${seconds}秒`;
 
                 if (newStickers.length > 0) {
                     db.myStickers.push(...newStickers); // 一次性推入所有新表情
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     renderStickerGrid();
                     batchAddStickerModal.classList.remove('visible');
                     showToast(`成功导入 ${newStickers.length} 个新表情！`);
@@ -12644,7 +12644,7 @@ return `${seconds}秒`;
                     stickerData.id = `sticker_${Date.now()}`;
                     db.myStickers.push(stickerData);
                 }
-                await dexieDB.groups.put(group);
+                await saveData();
                 renderStickerGrid();
                 addStickerModal.classList.remove('visible');
                 showToast('表情包已保存');
@@ -12693,7 +12693,7 @@ return `${seconds}秒`;
                 if (sticker) {
                     if (confirm(`确定要删除表情“${sticker.name}”吗？`)) {
                         db.myStickers = db.myStickers.filter(s => s.id !== currentStickerActionTarget);
-                        await dexieDB.groups.put(group);
+                        await saveData();
                         renderStickerGrid();
                         showToast('表情已删除');
                     }
@@ -12836,7 +12836,7 @@ return `${seconds}秒`;
                     timestamp: Date.now()
                 };
                 character.history.push(contextMessage);
-                await dexieDB.groups.put(group);
+                await saveData();
                 renderChatList();
             }
             receiveTransferActionSheet.classList.remove('visible');
@@ -12866,14 +12866,14 @@ return `${seconds}秒`;
                 e.preventDefault();
                 const newFontUrl = fontUrlInput.value.trim();
                 db.fontUrl = newFontUrl;
-                await dexieDB.groups.put(group);
+                await saveData();
                 applyGlobalFont(newFontUrl);
                 showToast('新字体已应用！');
             });
             restoreDefaultFontBtn.addEventListener('click', async () => {
                 fontUrlInput.value = '';
                 db.fontUrl = '';
-                await dexieDB.groups.put(group);
+                await saveData();
                 applyGlobalFont('');
                 showToast('已恢复默认字体！');
             });
@@ -13349,7 +13349,7 @@ return `${seconds}秒`;
                     const group = db.groups.find(g => g.id === currentChatId);
                     if (group) group.worldBookIds = selectedIds;
                 }
-                await dexieDB.groups.put(group);
+                await saveData();
                 worldBookSelectionModal.classList.remove('visible');
                 showToast('世界书关联已更新');
             });
@@ -13392,7 +13392,7 @@ return `${seconds}秒`;
                 e.maxMemory = document.getElementById('setting-max-memory').value;
                 e.useCustomBubbleCss = document.getElementById('setting-use-custom-css').checked;
                 e.customBubbleCss = document.getElementById('setting-custom-bubble-css').value;
-                await dexieDB.groups.put(group);
+                await saveData();
                 showToast('设置已保存！');
                 chatRoomTitle.textContent = e.remarkName;
                 renderChatList();
@@ -13521,7 +13521,7 @@ return `${seconds}秒`;
                     try {
                         const r = await compressImage(n, {quality: 0.85, maxWidth: 1080, maxHeight: 1920});
                         db.wallpaper = r, applyWallpaper(r), t.style.backgroundImage = `url(${r})`;
-                        await dexieDB.groups.put(group);
+                        await saveData();
                         showToast('壁纸更换成功！');
                     } catch (s) {
                         showToast('壁纸压缩失败，请重试');
@@ -13574,7 +13574,7 @@ return `${seconds}秒`;
                     worldBookIds: []
                 };
                 db.groups.push(newGroup);
-                await dexieDB.groups.put(group);
+                await saveData();
                 renderChatList();
                 createGroupModal.classList.remove('visible');
                 showToast(`群聊“${groupName}”创建成功！`);
@@ -13749,7 +13749,7 @@ return `${seconds}秒`;
                     }
                 });
                 if (selectedCharIds.length > 0) {
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     renderGroupMembersInSettings(group);
                     renderMessages(false, true);
                     showToast('已邀请新成员');
@@ -14122,7 +14122,7 @@ return `${seconds}秒`;
                     userPersonaIds: selectedUserPersonaIds,
                 };
 
-                await dexieDB.groups.put(group);
+                await saveData();
                 showToast('论坛绑定已更新');
                 modal.classList.remove('visible');
             });
@@ -14378,7 +14378,7 @@ function setupShareModal() {
             }
         });
 
-        await dexieDB.groups.put(group);
+        await saveData();
         renderChatList(); // 刷新聊天列表以显示新消息预览
         modal.classList.remove('visible');
         showToast(`成功分享给 ${selectedCharIds.length} 位联系人！`);
@@ -14567,7 +14567,7 @@ ${context}
             }));
 
             db.forumPosts = enhancedPosts;
-            await dexieDB.groups.put(group);
+            await saveData();
             renderForumPosts(db.forumPosts);
 
         } else {
