@@ -6844,11 +6844,22 @@ border-top: none;
                 const pomodorosText = task.mode === 'countdown' ? `倒计时模式` : '正计时模式';
                 const durationText = task.mode === 'countdown' ? `${task.duration}分钟` : '';
 
+                // 只使用任务自己的背景设置
+                const backgroundUrl = task.settings?.taskCardBackground;
+                let styleAttr = '';
+                let textStyle = '';
+
+                if (backgroundUrl) {
+                    styleAttr = `style="background-image: url(${backgroundUrl}); background-size: cover; background-position: center;"`;
+                    // 当有背景图时，让文字变白并增加阴影以提高可读性
+                    textStyle = `style="color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"`;
+                }
+
                 wrapper.innerHTML = `
-                    <div class="task-card">
+                    <div class="task-card" ${styleAttr}>
                         <div class="task-card-info">
-                            <h4 class="task-card-title">${DOMPurify.sanitize(task.name)}</h4>
-                            <p class="task-card-details">${pomodorosText} ${durationText}</p>
+                            <h4 class="task-card-title" ${textStyle}>${DOMPurify.sanitize(task.name)}</h4>
+                            <p class="task-card-details" ${textStyle}>${pomodorosText} ${durationText}</p>
                         </div>
                         <button class="task-card-start-btn">开始</button>
                     </div>
@@ -7265,7 +7276,12 @@ border-top: none;
                         duration: duration,
                         status: 'pending',
                         // 为每个任务创建独立的设置副本
-                        settings: JSON.parse(JSON.stringify(db.pomodoroSettings))
+                        // 为每个任务创建独立的设置副本，但确保背景是空的
+                        settings: {
+                            ...JSON.parse(JSON.stringify(db.pomodoroSettings)),
+                            focusBackground: '',
+                            taskCardBackground: ''
+                        }
                     };
 
                     if (!db.pomodoroTasks) {
@@ -7775,13 +7791,14 @@ border-top: none;
 
             taskCardBgUpload?.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
-                if (file) {
+                if (file && currentPomodoroSettingsContext) {
                     try {
                         const compressedUrl = await compressImage(file, { quality: 0.8, maxWidth: 800, maxHeight: 800 });
-                        db.pomodoroSettings.taskCardBackground = compressedUrl;
-                        await saveData();
-                        applyPomodoroBackgrounds();
-                        showToast('任务卡片背景已更新');
+                        // 将上传的图片URL保存到当前任务的独立设置中
+                        currentPomodoroSettingsContext.taskCardBackground = compressedUrl;
+                        // 同时更新输入框的值，以便保存时能正确写入
+                        document.getElementById('pomodoro-task-card-bg-url').value = compressedUrl;
+                        showToast('卡片背景已更新，请保存设置');
                     } catch (error) {
                         showToast('背景压缩失败');
                     }
@@ -7870,33 +7887,6 @@ border-top: none;
                 focusScreen.style.backgroundImage = 'none';
             }
 
-            // Apply task card background from the GLOBAL default settings
-            const defaultSettings = db.pomodoroSettings || {};
-            const styleId = 'pomodoro-task-card-bg-style';
-            let styleElement = document.getElementById(styleId);
-
-            if (defaultSettings.taskCardBackground) {
-                if (!styleElement) {
-                    styleElement = document.createElement('style');
-                    styleElement.id = styleId;
-                    document.head.appendChild(styleElement);
-                }
-                styleElement.innerHTML = `
-                    #pomodoro-screen .task-card {
-                        background-image: url(${defaultSettings.taskCardBackground});
-                        background-size: cover;
-                        background-position: center;
-                    }
-                    #pomodoro-screen .task-card-info h4, #pomodoro-screen .task-card-info p {
-                        color: white;
-                        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-                    }
-                `;
-            } else {
-                if (styleElement) {
-                    styleElement.remove();
-                }
-            }
         }
 
         function setupPomodoroGlobalSettings() {
