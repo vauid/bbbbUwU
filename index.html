@@ -6292,16 +6292,13 @@ border-top: none;
                 await dexieDB.worldBooks.bulkPut(db.worldBooks);
                 await dexieDB.myStickers.bulkPut(db.myStickers);
 
-                const settingsToSave = {
-                    apiSettings: db.apiSettings,
-                    wallpaper: db.wallpaper,
-                    homeScreenMode: db.homeScreenMode,
-                    fontUrl: db.fontUrl,
-                    customIcons: db.customIcons
-                };
-                await Promise.all(Object.entries(settingsToSave).map(([key, value]) =>
-                    dexieDB.globalSettings.put({ key, value })
-                ));
+                const settingsPromises = globalSettingKeys.map(key => {
+                    if (db[key] !== undefined) {
+                        return dexieDB.globalSettings.put({ key: key, value: db[key] });
+                    }
+                    return null;
+                }).filter(p => p);
+                await Promise.all(settingsPromises);
             });
         };
 
@@ -6324,11 +6321,27 @@ border-top: none;
                 return acc;
             }, {});
 
-            db.apiSettings = settings.apiSettings || {};
-            db.wallpaper = settings.wallpaper || 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg';
-            db.homeScreenMode = settings.homeScreenMode || 'night';
-            db.fontUrl = settings.fontUrl || '';
-            db.customIcons = settings.customIcons || {};
+            globalSettingKeys.forEach(key => {
+                const defaultValue = {
+                    apiSettings: {},
+                    wallpaper: 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg',
+                    homeScreenMode: 'night',
+                    fontUrl: '',
+                    customIcons: {},
+                    apiPresets: [],
+                    bubbleCssPresets: [],
+                    myPersonaPresets: [],
+                    globalCss: '',
+                    globalCssPresets: [],
+                    homeSignature: '编辑个性签名...',
+                    forumBindings: { worldBookIds: [], charIds: [], userPersonaIds: [] },
+                    pomodoroTasks: [],
+                    pomodoroSettings: { boundCharId: null, userPersona: '', focusBackground: '', taskCardBackground: '', encouragementMinutes: 25, pokeLimit: 5, globalWorldBookIds: [] },
+                    insWidgetSettings: { avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg', bubble1: 'love u.', avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg', bubble2: 'miss u.' },
+                    homeWidgetSettings: defaultWidgetSettings
+                };
+                db[key] = settings[key] !== undefined ? settings[key] : (defaultValue[key] !== undefined ? JSON.parse(JSON.stringify(defaultValue[key])) : undefined);
+            });
 
             // Data integrity checks (can be kept)
             db.characters.forEach(c => {
@@ -7451,7 +7464,7 @@ border-top: none;
                     db.insWidgetSettings.avatar2 = newSrc;
                 }
 
-                await dexieDB.globalSettings.put({ key: 'insWidgetSettings', value: db.insWidgetSettings });
+                await saveData();
                 setupHomeScreen(); // Re-render the home screen to show the new avatar
                 modal.classList.remove('visible');
                 showToast('头像已更新');
@@ -7546,7 +7559,7 @@ border-top: none;
                }
                db.homeWidgetSettings.polaroidImage = newSrc;
 
-               await dexieDB.globalSettings.put({ key: 'homeWidgetSettings', value: db.homeWidgetSettings });
+               await saveData();
                
                updatePolaroidImage(newSrc);
 
@@ -7601,7 +7614,7 @@ border-top: none;
                     try {
                         const compressedUrl = await compressImage(file, { quality: 0.8, maxWidth: 800, maxHeight: 800 });
                         db.pomodoroSettings.taskCardBackground = compressedUrl;
-                        await dexieDB.globalSettings.put({ key: 'homeWidgetSettings', value: db.homeWidgetSettings });
+                        await saveData();
                         applyPomodoroBackgrounds();
                         showToast('任务卡片背景已更新');
                     } catch (error) {
@@ -7840,7 +7853,7 @@ border-top: none;
 
                 if (target.closest('.favorite-journal-btn')) {
                     journal.isFavorited = !journal.isFavorited;
-                    await dexieDB.characters.put(character);
+                    await saveData();
                     target.closest('.favorite-journal-btn').classList.toggle('favorited', journal.isFavorited);
                     showToast(journal.isFavorited ? '已收藏' : '已取消收藏');
                     return;
@@ -8899,7 +8912,7 @@ border-top: none;
                    updateBubbleCssPreview(previewBox, preset.css, false, colorThemes[themeKey]);
                }
                (window.showToast && showToast('预设已应用到当前聊天并保存')) || alert('预设已应用（若页面支持）');
-               await dexieDB.groups.put(group);
+               await saveData();
            } catch(e){
                console.error('applyPresetToCurrentChat error', e);
            }
@@ -9587,14 +9600,14 @@ border-top: none;
 
                         if (db.homeWidgetSettings[part] && db.homeWidgetSettings[part][prop] !== newValue) {
                             db.homeWidgetSettings[part][prop] = newValue;
-                            await dexieDB.groups.put(group);
+                            await saveData();
                             showToast('小组件已更新');
                         }
                     } else if (target.id === 'widget-signature') { // It's the signature
                         const newSignature = target.textContent.trim();
                         if (db.homeSignature !== newSignature) {
                             db.homeSignature = newSignature;
-                            await dexieDB.groups.put(group);
+                            await saveData();
                             showToast('签名已保存');
                         }
                     } else if (target.id === 'ins-widget-bubble-1' || target.id === 'ins-widget-bubble-2') { // It's the INS widget
@@ -9602,7 +9615,7 @@ border-top: none;
                          const newText = target.textContent.trim();
                          if (db.insWidgetSettings[bubbleId] !== newText) {
                              db.insWidgetSettings[bubbleId] = newText;
-                             await dexieDB.groups.put(group);
+                             await saveData();
                              showToast('小组件文字已保存');
                          }
                     }
@@ -9739,7 +9752,7 @@ border-top: none;
                 homeScreen.classList.remove('day-mode');
             }
             db.homeScreenMode = mode;
-            await dexieDB.groups.put(group);
+            await saveData();
         }
 
                 function setupCustomizeApp() {
@@ -9779,7 +9792,7 @@ border-top: none;
                     if (db.customIcons) {
                         delete db.customIcons[iconId];
                     }
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     renderCustomizeForm(); // 重新渲染自定义页
                     setupHomeScreen(); // 刷新主页
                     showToast('图标已重置');
@@ -9949,7 +9962,7 @@ border-top: none;
                     const newCss = globalCssTextarea.value;
                     db.globalCss = newCss;
                     applyGlobalCss(newCss);
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     showToast('全局样式已应用');
                 });
             }
@@ -10177,7 +10190,7 @@ border-top: none;
                 label: chatItem.isPinned ? '取消置顶' : '置顶聊天',
                 action: async () => {
                     chatItem.isPinned = !chatItem.isPinned;
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     renderChatList();
                 }
             }, {
@@ -11808,7 +11821,7 @@ return `${seconds}秒`;
                 const count = endRange - startIndex;
 
                 chat.history.splice(startIndex, count);
-                await dexieDB.groups.put(group);
+                await saveData();
 
                 confirmModal.classList.remove('visible');
                 showToast(`已成功删除 ${count} 条消息`);
@@ -12535,7 +12548,7 @@ return `${seconds}秒`;
                 }
                 if (confirm(`确定要删除这 ${selectedStickerIds.size} 个表情吗？`)) {
                     db.myStickers = db.myStickers.filter(s => !selectedStickerIds.has(s.id));
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     showToast('表情已删除');
                     // 退出管理模式
                     isStickerManageMode = false;
@@ -13000,7 +13013,7 @@ return `${seconds}秒`;
                 } else {
                     db.worldBooks.push({id: `wb_${Date.now()}`, name, content, position, category});
                 }
-                await dexieDB.groups.put(group);
+                await saveData();
                 showToast('世界书条目已保存');
                 renderWorldBookList();
                 switchScreen('world-book-screen');
@@ -13044,7 +13057,7 @@ return `${seconds}秒`;
                                 db.groups.forEach(group => {
                                     group.worldBookIds = (group.worldBookIds || []).filter(id => id !== bookId);
                                 });
-                                await dexieDB.groups.put(group);
+                                await saveData();
                                 renderWorldBookList();
                                 showToast('条目已删除');
                             }
@@ -13308,7 +13321,7 @@ return `${seconds}秒`;
                             });
                             char.chatBg = compressedUrl;
                             chatRoomScreen.style.backgroundImage = `url(${compressedUrl})`;
-                            await dexieDB.groups.put(group);
+                            await saveData();
                             showToast('聊天背景已更换');
                         } catch (error) {
                             showToast('背景压缩失败，请重试');
@@ -13322,7 +13335,7 @@ return `${seconds}秒`;
                 if (confirm(`你确定要清空与“${character.remarkName}”的所有聊天记录吗？这个操作是不可恢复的！`)) {
                     character.history = [];
                     character.status = '在线'; // 重置状态
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     renderMessages(false, true);
                     renderChatList();
                     // 更新聊天室顶部的状态显示
@@ -13456,7 +13469,7 @@ return `${seconds}秒`;
         model: a.value,
         timePerceptionEnabled: document.getElementById('time-perception-switch').checked
     };
-    await dexieDB.groups.put(group);
+    await saveData();
     showToast('API设置已保存！')
 })
         }
@@ -13642,7 +13655,7 @@ return `${seconds}秒`;
                         if (group) {
                             group.chatBg = compressedUrl;
                             chatRoomScreen.style.backgroundImage = `url(${compressedUrl})`;
-                            await dexieDB.groups.put(group);
+                            await saveData();
                             showToast('聊天背景已更换');
                         }
                     } catch (error) {
@@ -13655,7 +13668,7 @@ return `${seconds}秒`;
                 if (!group) return;
                 if (confirm(`你确定要清空群聊“${group.name}”的所有聊天记录吗？这个操作是不可恢复的！`)) {
                     group.history = [];
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     renderMessages(false, true);
                     renderChatList();
                     groupSettingsSidebar.classList.remove('open');
@@ -13695,7 +13708,7 @@ return `${seconds}秒`;
                     member.groupNickname = document.getElementById('edit-member-group-nickname').value;
                     member.realName = document.getElementById('edit-member-real-name').value;
                     member.persona = document.getElementById('edit-member-persona').value;
-                    await dexieDB.groups.put(group);
+                    await saveData();
                     renderGroupMembersInSettings(group);
                     document.querySelectorAll(`.message-wrapper[data-sender-id="${member.id}"] .group-nickname`).forEach(el => {
                         el.textContent = member.groupNickname;
@@ -13770,7 +13783,7 @@ return `${seconds}秒`;
                 };
                 group.members.push(newMember);
                 sendInviteNotification(group, newMember.realName);
-                await dexieDB.groups.put(group);
+                await saveData();
                 renderGroupMembersInSettings(group);
                 renderMessages(false, true);
                 showToast(`新成员 ${newMember.groupNickname} 已加入`);
@@ -13907,7 +13920,7 @@ return `${seconds}秒`;
             group.useCustomBubbleCss = document.getElementById('setting-group-use-custom-css').checked;
             group.customBubbleCss = document.getElementById('setting-group-custom-bubble-css').value;
             updateCustomBubbleStyle(currentChatId, group.customBubbleCss, group.useCustomBubbleCss);
-            await dexieDB.groups.put(group);
+            await saveData();
             showToast('群聊设置已保存！');
             chatRoomTitle.textContent = group.name;
             renderChatList();
