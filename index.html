@@ -9655,6 +9655,7 @@ border-top: none;
 
             // --- Touch Events ---
             swiper.addEventListener('touchstart', (e) => {
+                if (e.target.closest('[contenteditable]')) return; // <-- 新增这行
                 // No longer need to check for target, the whole area is swipeable
                 isDragging = true;
                 touchStartX = e.changedTouches[0].screenX;
@@ -9674,6 +9675,7 @@ border-top: none;
 
             // --- Mouse Events ---
             swiper.addEventListener('mousedown', (e) => {
+                if (e.target.closest('[contenteditable]')) return; // <-- 新增这行
                 // Prevent default browser action (like dragging a link)
                 e.preventDefault();
                 isDragging = true;
