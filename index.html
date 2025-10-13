@@ -11132,8 +11132,11 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                 let finalContent = contentToRender;
 
                 if (isHtml) {
+                    // 0. Remove style tags before doing anything else
+                    finalContent = contentToRender.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
                     // 1. Make IDs unique to prevent conflicts
-                    finalContent = contentToRender.replace(/(id|for)="([^"]+)"/g, (match, attr, value) => {
+                    finalContent = finalContent.replace(/(id|for)="([^"]+)"/g, (match, attr, value) => {
                         return `${attr}="${value}-${message.id}"`;
                     });
                     
@@ -11142,8 +11145,8 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                         return `#${id}-${message.id}`;
                     });
 
-                    // 2. Sanitize, allowing style tags
-                    finalContent = DOMPurify.sanitize(finalContent, { ADD_TAGS: ['style'] });
+                    // 2. Sanitize the rest of the HTML
+                    finalContent = DOMPurify.sanitize(finalContent);
                 } else {
                     // For plain text, just sanitize as before
                     finalContent = DOMPurify.sanitize(contentToRender);
