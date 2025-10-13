@@ -6076,7 +6076,7 @@ border-top: none;
         const globalSettingKeys = [
             'apiSettings', 'wallpaper', 'homeScreenMode', 'fontUrl', 'customIcons',
             'apiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
-            'globalCssPresets', 'homeSignature', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
+            'globalCssPresets', 'homeSignature', 'forumPosts', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
         ];
         let db = {
             characters: [],
@@ -6270,7 +6270,19 @@ border-top: none;
                     wallpaper: data.wallpaper || 'https://i.postimg.cc/W4Z9R9x4/ins-1.jpg',
                     homeScreenMode: data.homeScreenMode || 'night',
                     fontUrl: data.fontUrl || '',
-                    customIcons: data.customIcons || {}
+                    customIcons: data.customIcons || {},
+                    apiPresets: data.apiPresets || [],
+                    bubbleCssPresets: data.bubbleCssPresets || [],
+                    myPersonaPresets: data.myPersonaPresets || [],
+                    globalCss: data.globalCss || '',
+                    globalCssPresets: data.globalCssPresets || [],
+                    homeSignature: data.homeSignature || '编辑个性签名...',
+                    forumPosts: data.forumPosts || [],
+                    forumBindings: data.forumBindings || { worldBookIds: [], charIds: [], userPersonaIds: [] },
+                    pomodoroTasks: data.pomodoroTasks || [],
+                    pomodoroSettings: data.pomodoroSettings || { boundCharId: null, userPersona: '', focusBackground: '', taskCardBackground: '', encouragementMinutes: 25, pokeLimit: 5, globalWorldBookIds: [] },
+                    insWidgetSettings: data.insWidgetSettings || { avatar1: 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg', bubble1: 'love u.', avatar2: 'https://i.postimg.cc/GtbTnxhP/o-o-1.jpg', bubble2: 'miss u.' },
+                    homeWidgetSettings: data.homeWidgetSettings || defaultWidgetSettings
                 };
 
                 const settingsPromises = Object.entries(settingsToMigrate).map(([key, value]) =>
