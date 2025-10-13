@@ -6438,20 +6438,48 @@ border-top: none;
                 }
             }
 
-            // 添加单条消息（增量更新）
+            // 添加单条消息（增量更新） - 优化版
             async addMessage(chatId, chatType, message) {
                 const startTime = Date.now();
                 try {
-                    // 获取当前消息
-                    const currentMessages = await this.getChatMessages(chatId, chatType);
-                    currentMessages.push(message);
+                    // 1. 查找此聊天的最后一个块
+                    const lastChunk = await this.db.messageChunks
+                        .where({ chatId: chatId, chatType: chatType })
+                        .last();
 
-                    // 重新保存（会自动分块）
-                    await this.saveChatMessages(chatId, chatType, currentMessages);
+                    if (lastChunk && lastChunk.messages.length < this.chunkSize) {
+                        // 2a. 如果最后一个块存在且未满，则追加消息并更新该块
+                        lastChunk.messages.push(message);
+                        lastChunk.timestamp = Date.now();
+                        await this.db.messageChunks.put(lastChunk);
+                        console.log(`消息已追加到块: ${lastChunk.id}`);
+                    } else {
+                        // 2b. 如果没有块或最后一个块已满，则创建新块
+                        const newChunkIndex = lastChunk ? lastChunk.chunkIndex + 1 : 0;
+                        const newChunkId = `${chatId}_${chatType}_${newChunkIndex}`;
+                        const newChunk = {
+                            id: newChunkId,
+                            chatId: chatId,
+                            chatType: chatType,
+                            chunkIndex: newChunkIndex,
+                            messages: [message],
+                            timestamp: Date.now()
+                        };
+                        await this.db.messageChunks.add(newChunk);
+                        console.log(`新消息块已创建: ${newChunkId}`);
+                    }
+
+                    // 3. 如果缓存中存在此聊天的消息，也更新缓存
+                    const cacheKey = `messages_${chatId}_${chatType}`;
+                    const cachedMessages = this.getFromCache(cacheKey);
+                    if (cachedMessages) {
+                        cachedMessages.push(message);
+                        this.updateCache(cacheKey, cachedMessages);
+                    }
 
                     return true;
                 } catch (error) {
-                    console.error('添加消息失败:', error);
+                    console.error('添加消息失败 (增量):', error);
                     return false;
                 }
             }
@@ -12356,7 +12384,7 @@ try {
     console.error("Failed to save pending message to localStorage", e);
 }
 
-await saveData();
+await dataStorage.addMessage(currentChatId, currentChatType, message);
 
 // Lifeboat: Step 3 - Remove from pending after successful save
 try {
@@ -13410,7 +13438,9 @@ return `${seconds}秒`;
                     }
                 }
  
-                await saveData();
+                // 使用优化后的增量更新，而不是全量保存
+                await dataStorage.addMessage(targetChatId, targetChatType, message);
+                // 增量更新后，只需刷新列表，无需重新保存所有数据
                 renderChatList();
             }
         }
