@@ -72,6 +72,7 @@
             flex-direction: column;
         }
 
+
         .screen {
             display: none;
             flex-direction: column;
@@ -5829,6 +5830,64 @@ border-top: none;
         </form>
     </div>
 </div>
+    <!-- Update Log Modal -->
+    <div id="update-log-modal" class="modal-overlay">
+        <div class="modal-window">
+            <h3>发现新版本！</h3>
+            <div id="update-log-modal-content">
+                <!-- Update content will be injected here -->
+            </div>
+            <button id="close-update-log-modal" class="btn btn-primary" style="margin-top: 15px;">我知道了</button>
+        </div>
+    </div>
+    <style>
+        /* --- Update Log Modal Styles --- */
+        #update-log-modal .modal-window {
+            max-width: 380px;
+            text-align: left;
+        }
+
+        #update-log-modal-content {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 15px 15px;
+            margin: 15px 0;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            background-color: #fcfcfc;
+            border-radius: 8px;
+        }
+
+        #update-log-modal-content h4 {
+            font-size: 16px;
+            color: var(--primary-color);
+            margin-top: 10px;
+            margin-bottom: 8px;
+        }
+
+        #update-log-modal-content ul {
+            list-style-type: none;
+            padding-left: 5px;
+            margin: 0;
+        }
+
+        #update-log-modal-content li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+            font-size: 14px;
+            color: #555;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        #update-log-modal-content li::before {
+            content: '✨';
+            position: absolute;
+            left: 0;
+            top: 2px;
+            color: var(--accent-color);
+        }
+    </style>
 
 <script>
     async function updateBatteryStatus() {
@@ -6077,6 +6136,25 @@ border-top: none;
             'apiSettings', 'wallpaper', 'homeScreenMode', 'fontUrl', 'customIcons',
             'apiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
             'globalCssPresets', 'homeSignature', 'forumPosts', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
+        ];
+        const appVersion = "1.1.0"; // Current app version
+        const updateLog = [
+            {
+                version: "1.1.0",
+                date: "2025-10-13",
+                notes: [
+                    "新增：教程页面增加更新日志，让您随时了解最新变化。",
+                    "新增：更新日志提醒功能，新版本发布时会自动提示。",
+                    "优化：修复了一些已知的显示问题。",
+                ]
+            },
+            {
+                version: "1.0.0",
+                date: "2025-10-01",
+                notes: [
+                    "章鱼喷墨机正式上线！",
+                ]
+            }
         ];
         let db = {
             characters: [],
@@ -7454,6 +7532,7 @@ border-top: none;
             setupGroupChatSystem();
             setupCustomizeApp();
             setupTutorialApp();
+            checkForUpdates();
             setupPeekFeature();
             setupChatExpansionPanel();
             setupMemoryJournalScreen(); // 新增：初始化回忆日记功能
@@ -10048,6 +10127,67 @@ border-top: none;
             if (globalCssTextarea) {
                 globalCssTextarea.value = db.globalCss || '';
             }
+    
+            // --- NEW: Update Log Functions ---
+            function renderUpdateLog() {
+                const tutorialContent = document.getElementById('tutorial-content-area');
+                if (!tutorialContent) return;
+    
+                const updateSection = document.createElement('div');
+                updateSection.className = 'tutorial-item'; // Use tutorial-item class, default open
+    
+                let notesHtml = '';
+                updateLog.forEach((log, index) => {
+                    notesHtml += `
+                        <div style="margin-bottom: 15px; ${index < updateLog.length - 1 ? 'padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;' : ''}">
+                            <h4 style="font-size: 15px; color: #333; margin: 0 0 5px 0;">版本 ${log.version} (${log.date})</h4>
+                            <ul style="padding-left: 20px; margin: 0; list-style-type: '› ';">
+                                ${log.notes.map(note => `<li style="margin-bottom: 5px; color: #666;">${note}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                });
+    
+                updateSection.innerHTML = `
+                    <div class="tutorial-header">更新日志</div>
+                    <div class="tutorial-content" style="padding-top: 15px;">
+                        ${notesHtml}
+                    </div>
+                `;
+                
+                tutorialContent.appendChild(updateSection);
+            }
+    
+            function showUpdateModal() {
+                const modal = document.getElementById('update-log-modal');
+                const contentEl = document.getElementById('update-log-modal-content');
+                const closeBtn = document.getElementById('close-update-log-modal');
+    
+                const latestLog = updateLog[0];
+                if (!latestLog) return;
+    
+                contentEl.innerHTML = `
+                    <h4>版本 ${latestLog.version} (${latestLog.date})</h4>
+                    <ul>
+                        ${latestLog.notes.map(note => `<li>${note}</li>`).join('')}
+                    </ul>
+                `;
+    
+                modal.classList.add('visible');
+    
+                closeBtn.onclick = () => {
+                    modal.classList.remove('visible');
+                    localStorage.setItem('lastSeenVersion', appVersion);
+                };
+            }
+    
+            function checkForUpdates() {
+                const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+                if (lastSeenVersion !== appVersion) {
+                    // Use a small delay to ensure the main UI has rendered
+                    setTimeout(showUpdateModal, 500);
+                }
+            }
             const applyGlobalCssNowBtn = document.getElementById('apply-global-css-now-btn');
             if (applyGlobalCssNowBtn) {
                 applyGlobalCssNowBtn.addEventListener('click', async () => {
@@ -10108,6 +10248,67 @@ border-top: none;
                 }
             });
         }
+
+        // --- NEW: Update Log Functions ---
+        function renderUpdateLog() {
+            const tutorialContent = document.getElementById('tutorial-content-area');
+            if (!tutorialContent) return;
+
+            const updateSection = document.createElement('div');
+            updateSection.className = 'tutorial-item'; // Use tutorial-item class, default open
+
+            let notesHtml = '';
+            updateLog.forEach((log, index) => {
+                notesHtml += `
+                    <div style="margin-bottom: 15px; ${index < updateLog.length - 1 ? 'padding-bottom: 10px; border-bottom: 1px solid #f0f0f0;' : ''}">
+                        <h4 style="font-size: 15px; color: #333; margin: 0 0 5px 0;">版本 ${log.version} (${log.date})</h4>
+                        <ul style="padding-left: 20px; margin: 0; list-style-type: '› ';">
+                            ${log.notes.map(note => `<li style="margin-bottom: 5px; color: #666;">${note}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+
+            updateSection.innerHTML = `
+                <div class="tutorial-header">更新日志</div>
+                <div class="tutorial-content" style="padding-top: 15px;">
+                    ${notesHtml}
+                </div>
+            `;
+            
+            tutorialContent.appendChild(updateSection);
+        }
+
+        function showUpdateModal() {
+            const modal = document.getElementById('update-log-modal');
+            const contentEl = document.getElementById('update-log-modal-content');
+            const closeBtn = document.getElementById('close-update-log-modal');
+
+            const latestLog = updateLog[0];
+            if (!latestLog) return;
+
+            contentEl.innerHTML = `
+                <h4>版本 ${latestLog.version} (${latestLog.date})</h4>
+                <ul>
+                    ${latestLog.notes.map(note => `<li>${note}</li>`).join('')}
+                </ul>
+            `;
+
+            modal.classList.add('visible');
+
+            closeBtn.onclick = () => {
+                modal.classList.remove('visible');
+                localStorage.setItem('lastSeenVersion', appVersion);
+            };
+        }
+
+        function checkForUpdates() {
+            const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+            if (lastSeenVersion !== appVersion) {
+                // Use a small delay to ensure the main UI has rendered
+                setTimeout(showUpdateModal, 500);
+            }
+        }
         let loadingBtn = false
 
         function renderTutorialContent() {
@@ -10124,6 +10325,7 @@ border-top: none;
                 {title: '404-群聊', imageUrls: ['https://i.postimg.cc/X7LSmRTJ/404.jpg']}
             ];
             tutorialContentArea.innerHTML = '';
+            renderUpdateLog();
             tutorials.forEach(tutorial => {
                 const item = document.createElement('div');
                 item.className = 'tutorial-item';
@@ -11184,61 +11386,45 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = 'image-bubble';
                 bubbleElement.innerHTML = `<img src="${content}" alt="图片消息">`;
-            } else { // Handles text, HTML, and unrecognized formats
-                bubbleElement = document.createElement('div');
-                bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
-                
-                let contentToRender = content;
+            } else if (textMatch) {
+    bubbleElement = document.createElement('div');
+    bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
+    let userText = textMatch[1].trim().replace(/\[发送时间:.*?\]/g, '').trim();
+    // 使用 DOMPurify 清理和渲染 HTML
+    bubbleElement.innerHTML = DOMPurify.sanitize(userText);
+    if (!chat.useCustomBubbleCss) {
+        bubbleElement.style.backgroundColor = bubbleTheme.bg;
+        bubbleElement.style.color = bubbleTheme.text;
+    }
+} else if (message && Array.isArray(message.parts) && message.parts[0].type === 'html') {
+    bubbleElement = document.createElement('div');
+    bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
+    // 使用 DOMPurify 清理和渲染 HTML
+    // 修改后
+    bubbleElement.innerHTML = DOMPurify.sanitize(message.parts[0].text, {
+        ADD_TAGS: ['style'],  // 允许 <style> 标签
+        ADD_ATTR: ['style']   // 允许所有标签上的 style="" 属性
+    });
 
-                // If it's a structured message like "[Sender: Message]", extract the core message.
-                const textMatch = content.match(/\[(?:.+?)的消息：([\s\S]+?)\]/);
-                if (textMatch && textMatch[1]) {
-                    contentToRender = textMatch[1].trim();
-                }
-                // Also handle the generic case if the specific "的消息" isn't there
-                else {
-                    const genericMatch = content.match(/^\[.*?：([\s\S]*)\]$/);
-                    if (genericMatch && genericMatch[1]) {
-                        contentToRender = genericMatch[1].trim();
-                    }
-                }
+} else {
+    bubbleElement = document.createElement('div');
+    bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
+    let displayedContent = content;
+    const plainTextMatch = content.match(/^\[.*?：([\s\S]*)\]$/);
+    if (plainTextMatch && plainTextMatch[1]) {
+        displayedContent = plainTextMatch[1].trim();
+    }
+    displayedContent = displayedContent.replace(/\[发送时间:.*?\]/g, '').trim();
 
-                // Clean up any lingering timestamps
-                contentToRender = contentToRender.replace(/\[发送时间:.*?\]/g, '').trim();
+    // 默认使用 DOMPurify 清理和渲染所有内容
+    bubbleElement.innerHTML = DOMPurify.sanitize(displayedContent);
 
-                // --- NEW LOGIC ---
-                // Check if the content is likely HTML (contains tags)
-                const isHtml = /<[a-z][\s\S]*>/i.test(contentToRender);
-                let finalContent = contentToRender;
+    if (!chat.useCustomBubbleCss) {
+        bubbleElement.style.backgroundColor = bubbleTheme.bg;
+        bubbleElement.style.color = bubbleTheme.text;
+    }
+}
 
-                if (isHtml) {
-                    // 0. Remove style tags before doing anything else
-                    finalContent = contentToRender.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-
-                    // 1. Make IDs unique to prevent conflicts
-                    finalContent = finalContent.replace(/(id|for)="([^"]+)"/g, (match, attr, value) => {
-                        return `${attr}="${value}-${message.id}"`;
-                    });
-                    
-                    // Also need to update CSS selectors that use the ID
-                    finalContent = finalContent.replace(/#([^"\s,{>.:;!]+)/g, (match, id) => {
-                        return `#${id}-${message.id}`;
-                    });
-
-                    // 2. Sanitize the rest of the HTML
-                    finalContent = DOMPurify.sanitize(finalContent);
-                } else {
-                    // For plain text, just sanitize as before
-                    finalContent = DOMPurify.sanitize(contentToRender);
-                }
-
-                bubbleElement.innerHTML = finalContent;
-
-                if (!chat.useCustomBubbleCss) {
-                    bubbleElement.style.backgroundColor = bubbleTheme.bg;
-                    bubbleElement.style.color = bubbleTheme.text;
-                }
-            }
             const nicknameHTML = (currentChatType === 'group' && !isSent && senderNickname) ? `<div class="group-nickname">${senderNickname}</div>` : '';
             bubbleRow.innerHTML = `<div class="message-info">${nicknameHTML}<img src="${avatarUrl}" class="message-avatar"><span class="message-time">${timeString}</span></div>`;
             if (bubbleElement) {
