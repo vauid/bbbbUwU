@@ -6438,40 +6438,20 @@ border-top: none;
                 }
             }
 
-            // 添加单条消息（增量更新 - 优化版）
+            // 添加单条消息（增量更新）
             async addMessage(chatId, chatType, message) {
+                const startTime = Date.now();
                 try {
-                    const lastChunk = await this.db.messageChunks
-                        .where({ chatId: chatId, chatType: chatType })
-                        .orderBy('chunkIndex')
-                        .last();
+                    // 获取当前消息
+                    const currentMessages = await this.getChatMessages(chatId, chatType);
+                    currentMessages.push(message);
 
-                    if (lastChunk && lastChunk.messages.length < this.chunkSize) {
-                        lastChunk.messages.push(message);
-                        await this.db.messageChunks.put(lastChunk);
-                    } else {
-                        const newChunkIndex = lastChunk ? lastChunk.chunkIndex + 1 : 0;
-                        const newChunkId = `${chatId}_${chatType}_${newChunkIndex}`;
-                        const newChunk = {
-                            id: newChunkId,
-                            chatId: chatId,
-                            chatType: chatType,
-                            chunkIndex: newChunkIndex,
-                            messages: [message],
-                            timestamp: Date.now()
-                        };
-                        await this.db.messageChunks.put(newChunk);
-                    }
+                    // 重新保存（会自动分块）
+                    await this.saveChatMessages(chatId, chatType, currentMessages);
 
-                    const cacheKey = `messages_${chatId}_${chatType}`;
-                    const cachedMessages = this.getFromCache(cacheKey);
-                    if (cachedMessages) {
-                        cachedMessages.push(message);
-                        this.updateCache(cacheKey, cachedMessages);
-                    }
                     return true;
                 } catch (error) {
-                    console.error('添加消息失败 (Optimized):', error);
+                    console.error('添加消息失败:', error);
                     return false;
                 }
             }
@@ -7032,21 +7012,34 @@ ${historyContext}
             // 保存基础数据
             await dataStorage.saveData('章鱼喷墨机', baseData);
 
-            // 分别保存角色和群组数据（不包含消息历史）
+            // 分别保存角色和群组数据（包含消息）
             if (characters) {
                 for (const char of characters) {
-                    // 历史记录由 addMessage 等函数独立、增量地处理，这里不再重复保存
-                    const charData = { ...char };
-                    delete charData.history;
+                    if (char.history && char.history.length > 0) {
+    await dataStorage.saveChatMessages(char.id, 'private', char.history);
+} else {
+    // 如果历史记录为空，则清空数据库中的消息
+    await dataStorage.clearChatMessages(char.id, 'private');
+}
+                    // 保存角色基础信息（不包含history）
+                    const { history, ...charData } = char;
+                    charData.history = []; // 保持兼容性
                     await dataStorage.saveData(`character_${char.id}`, charData);
                 }
             }
 
             if (groups) {
                 for (const group of groups) {
-                    // 历史记录由 addMessage 等函数独立、增量地处理，这里不再重复保存
-                    const groupData = { ...group };
-                    delete groupData.history;
+                    // 保存消息到分块存储
+                    if (group.history && group.history.length > 0) {
+    await dataStorage.saveChatMessages(group.id, 'group', group.history);
+} else {
+    // 如果历史记录为空，则清空数据库中的消息
+    await dataStorage.clearChatMessages(group.id, 'group');
+}
+                    // 保存群组基础信息（不包含history）
+                    const { history, ...groupData } = group;
+                    groupData.history = []; // 保持兼容性
                     await dataStorage.saveData(`group_${group.id}`, groupData);
                 }
             }
@@ -7274,6 +7267,44 @@ ${historyContext}
         if (!db.homeWidgetSettings.polaroidImage) {
             db.homeWidgetSettings.polaroidImage = 'https://i.postimg.cc/XvFDdTKY/Smart-Select-20251013-023208.jpg';
         }
+
+            // Lifeboat: Step 4 & 5 - Recover pending messages on load
+            try {
+                const pendingKey = 'pendingMessages';
+                const pending = JSON.parse(localStorage.getItem(pendingKey) || '{}');
+                let recoveredCount = 0;
+                if (Object.keys(pending).length > 0) {
+                    console.log('Found pending messages, attempting recovery...');
+                    for (const chatId in pending) {
+                        const messagesToRecover = pending[chatId];
+                        if (messagesToRecover && messagesToRecover.length > 0) {
+                            const chatType = messagesToRecover[0].chatType; // Assume all pending for a chat are same type
+                            const chat = (chatType === 'private')
+                                ? db.characters.find(c => c.id === chatId)
+                                : db.groups.find(g => g.id === chatId);
+
+                            if (chat) {
+                                messagesToRecover.forEach(item => {
+                                    // Avoid duplicates
+                                    if (!chat.history.some(h => h.id === item.message.id)) {
+                                        chat.history.push(item.message);
+                                        recoveredCount++;
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    // Lifeboat: Step 6 - Clear pending after recovery
+                    localStorage.removeItem(pendingKey);
+                    if (recoveredCount > 0) {
+                        showToast(`成功恢复了 ${recoveredCount} 条未保存的消息。`);
+                        await saveData(); // Save the recovered state
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to recover pending messages from localStorage", e);
+                localStorage.removeItem('pendingMessages'); // Clear potentially corrupt data
+            }
 
          return Promise.resolve();
      };
@@ -12307,14 +12338,46 @@ if (chat.history.length > 0 && chat.history.length % 100 === 0) {
     promptForBackupIfNeeded('history_milestone');
 }
 
-await dataStorage.addMessage(currentChatId, currentChatType, message); // Efficiently save the new message
-await saveData(); // Save non-history data like timestamps
+// Lifeboat: Step 1 - Add to pending
+const pendingKey = 'pendingMessages';
+try {
+    const pending = JSON.parse(localStorage.getItem(pendingKey) || '{}');
+    if (!pending[currentChatId]) {
+        pending[currentChatId] = [];
+    }
+    // Store a lightweight object for recovery
+    pending[currentChatId].push({
+        chatId: currentChatId,
+        chatType: currentChatType,
+        message: message
+    });
+    localStorage.setItem(pendingKey, JSON.stringify(pending));
+} catch (e) {
+    console.error("Failed to save pending message to localStorage", e);
+}
+
+await saveData();
+
+// Lifeboat: Step 3 - Remove from pending after successful save
+try {
+    const currentPending = JSON.parse(localStorage.getItem(pendingKey) || '{}');
+    if (currentPending[currentChatId]) {
+        currentPending[currentChatId] = currentPending[currentChatId].filter(p => p.message.id !== message.id);
+        if (currentPending[currentChatId].length === 0) {
+            delete currentPending[currentChatId];
+        }
+        localStorage.setItem(pendingKey, JSON.stringify(currentPending));
+    }
+} catch (e) {
+    console.error("Failed to clear pending message from localStorage", e);
+}
+
 renderChatList();
 
-    // 新增：发送后清空引用状态
-    if (currentQuoteInfo) {
-        cancelQuoteReply();
-    }
+// 新增：发送后清空引用状态
+if (currentQuoteInfo) {
+    cancelQuoteReply();
+}
 }
 
 // --- 新增：撤回消息函数 ---
@@ -12398,7 +12461,6 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await dataStorage.addMessage(currentChatId, currentChatType, message);
             await saveData();
             renderChatList();
         }
@@ -13287,7 +13349,6 @@ return `${seconds}秒`;
                                     }
                                 };
                                 chat.history.push(message);
-                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                                 addMessageBubble(message, targetChatId, targetChatType);
                             } else {
                                 // 如果找不到原始消息，则作为普通消息发送
@@ -13299,7 +13360,6 @@ return `${seconds}秒`;
                                     timestamp: Date.now(),
                                 };
                                 chat.history.push(message);
-                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                                 addMessageBubble(message, targetChatId, targetChatType);
                             }
                         } else {
@@ -13322,7 +13382,6 @@ return `${seconds}秒`;
                             }
 
                             chat.history.push(message);
-                            await dataStorage.addMessage(targetChatId, targetChatType, message);
                             addMessageBubble(message, targetChatId, targetChatType);
                         }
 
@@ -13345,7 +13404,6 @@ return `${seconds}秒`;
                                     senderId: sender.id
                                 };
                                 group.history.push(message);
-                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                                 addMessageBubble(message, targetChatId, targetChatType);
                             }
                         }
@@ -14983,23 +15041,6 @@ return `${seconds}秒`;
 
                 // 4. Call the new saveData function which handles the new DB schema
                 showToast('正在写入新数据...');
-
-                // Manually save chat histories, as saveData no longer handles them during import.
-                if (db.characters) {
-                    for (const char of db.characters) {
-                        if (char.history && char.history.length > 0) {
-                            await dataStorage.saveChatMessages(char.id, 'private', char.history);
-                        }
-                    }
-                }
-                if (db.groups) {
-                    for (const group of db.groups) {
-                        if (group.history && group.history.length > 0) {
-                            await dataStorage.saveChatMessages(group.id, 'group', group.history);
-                        }
-                    }
-                }
-
                 await saveData(db);
 
                 const duration = Date.now() - startTime;
