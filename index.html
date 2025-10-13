@@ -7036,7 +7036,8 @@ ${historyContext}
             if (characters) {
                 for (const char of characters) {
                     // 历史记录由 addMessage 等函数独立、增量地处理，这里不再重复保存
-                    const { history, ...charData } = char;
+                    const charData = { ...char };
+                    delete charData.history;
                     await dataStorage.saveData(`character_${char.id}`, charData);
                 }
             }
@@ -7044,7 +7045,8 @@ ${historyContext}
             if (groups) {
                 for (const group of groups) {
                     // 历史记录由 addMessage 等函数独立、增量地处理，这里不再重复保存
-                    const { history, ...groupData } = group;
+                    const groupData = { ...group };
+                    delete groupData.history;
                     await dataStorage.saveData(`group_${group.id}`, groupData);
                 }
             }
@@ -12396,6 +12398,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
+            await dataStorage.addMessage(currentChatId, currentChatType, message);
             await saveData();
             renderChatList();
         }
@@ -13284,6 +13287,7 @@ return `${seconds}秒`;
                                     }
                                 };
                                 chat.history.push(message);
+                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                                 addMessageBubble(message, targetChatId, targetChatType);
                             } else {
                                 // 如果找不到原始消息，则作为普通消息发送
@@ -13295,6 +13299,7 @@ return `${seconds}秒`;
                                     timestamp: Date.now(),
                                 };
                                 chat.history.push(message);
+                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                                 addMessageBubble(message, targetChatId, targetChatType);
                             }
                         } else {
@@ -13317,6 +13322,7 @@ return `${seconds}秒`;
                             }
 
                             chat.history.push(message);
+                            await dataStorage.addMessage(targetChatId, targetChatType, message);
                             addMessageBubble(message, targetChatId, targetChatType);
                         }
 
@@ -13339,6 +13345,7 @@ return `${seconds}秒`;
                                     senderId: sender.id
                                 };
                                 group.history.push(message);
+                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                                 addMessageBubble(message, targetChatId, targetChatType);
                             }
                         }
@@ -14976,6 +14983,23 @@ return `${seconds}秒`;
 
                 // 4. Call the new saveData function which handles the new DB schema
                 showToast('正在写入新数据...');
+
+                // Manually save chat histories, as saveData no longer handles them during import.
+                if (db.characters) {
+                    for (const char of db.characters) {
+                        if (char.history && char.history.length > 0) {
+                            await dataStorage.saveChatMessages(char.id, 'private', char.history);
+                        }
+                    }
+                }
+                if (db.groups) {
+                    for (const group of db.groups) {
+                        if (group.history && group.history.length > 0) {
+                            await dataStorage.saveChatMessages(group.id, 'group', group.history);
+                        }
+                    }
+                }
+
                 await saveData(db);
 
                 const duration = Date.now() - startTime;
