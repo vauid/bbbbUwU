@@ -12440,7 +12440,7 @@ async function withdrawMessage(messageId) {
     message.content = `[${myName} 撤回了一条消息：${cleanOriginalContent}]`;
 
     // 保存数据
-    await saveData();
+    await dataStorage.addMessage(currentChatId, currentChatType, message);
 
     // 重新渲染
     currentPage = 1;
@@ -12489,7 +12489,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await saveData();
+            await dataStorage.addMessage(currentChatId, currentChatType, message);
             renderChatList();
         }
 
@@ -12510,7 +12510,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await saveData();
+            await dataStorage.addMessage(currentChatId, currentChatType, message);
             renderChatList();
             stickerModal.classList.remove('visible');
         }
@@ -12534,7 +12534,7 @@ return `${seconds}秒`;
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await saveData();
+            await dataStorage.addMessage(currentChatId, currentChatType, message);
             renderChatList();
         }
 
@@ -12577,8 +12577,9 @@ return `${seconds}秒`;
                 };
                 chat.history.push(message);
                 addMessageBubble(message, currentChatId, currentChatType);
+                await dataStorage.addMessage(currentChatId, currentChatType, message);
             } else { // Group chat
-                currentGroupAction.recipients.forEach(recipientId => {
+                for (const recipientId of currentGroupAction.recipients) {
                     const recipient = chat.members.find(m => m.id === recipientId);
                     if (recipient) {
                         const content = `[${chat.me.nickname} 向 ${recipient.realName} 转账：${amount}元；备注：${remark}]`;
@@ -12592,10 +12593,10 @@ return `${seconds}秒`;
                         };
                         chat.history.push(message);
                         addMessageBubble(message, currentChatId, currentChatType);
+                        await dataStorage.addMessage(currentChatId, currentChatType, message);
                     }
-                });
+                }
             }
-            await saveData();
             renderChatList();
         }
 
@@ -12617,8 +12618,9 @@ return `${seconds}秒`;
                 };
                 chat.history.push(message);
                 addMessageBubble(message, currentChatId, currentChatType);
+                await dataStorage.addMessage(currentChatId, currentChatType, message);
             } else { // Group chat
-                currentGroupAction.recipients.forEach(recipientId => {
+                for (const recipientId of currentGroupAction.recipients) {
                     const recipient = chat.members.find(m => m.id === recipientId);
                     if (recipient) {
                         const content = `[${chat.me.nickname} 向 ${recipient.realName} 送来了礼物：${description}]`;
@@ -12632,10 +12634,10 @@ return `${seconds}秒`;
                         };
                         chat.history.push(message);
                         addMessageBubble(message, currentChatId, currentChatType);
+                        await dataStorage.addMessage(currentChatId, currentChatType, message);
                     }
-                });
+                }
             }
-            await saveData();
             renderChatList();
         }
 
@@ -12682,7 +12684,8 @@ return `${seconds}秒`;
 
             chat.history.push(visualMessage, contextMessage);
             addMessageBubble(visualMessage, currentChatId, currentChatType);
-            await saveData();
+            await dataStorage.addMessage(currentChatId, currentChatType, visualMessage);
+            await dataStorage.addMessage(currentChatId, currentChatType, contextMessage);
             renderChatList();
         }
 
