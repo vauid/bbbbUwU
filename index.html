@@ -6442,16 +6442,43 @@ border-top: none;
             async addMessage(chatId, chatType, message) {
                 const startTime = Date.now();
                 try {
-                    // 获取当前消息
-                    const currentMessages = await this.getChatMessages(chatId, chatType);
-                    currentMessages.push(message);
+                    // 1. Find the last chunk for the chat
+                    const lastChunk = await this.db.messageChunks
+                        .where({ chatId: chatId, chatType: chatType })
+                        .last();
 
-                    // 重新保存（会自动分块）
-                    await this.saveChatMessages(chatId, chatType, currentMessages);
+                    if (lastChunk && lastChunk.messages.length < this.chunkSize) {
+                        // 2a. If last chunk exists and is not full, update it
+                        lastChunk.messages.push(message);
+                        await this.db.messageChunks.put(lastChunk);
+                    } else {
+                        // 2b. If no chunk or last chunk is full, create a new one
+                        const newChunkIndex = lastChunk ? lastChunk.chunkIndex + 1 : 0;
+                        const newChunkId = `${chatId}_${chatType}_${newChunkIndex}`;
+                        const newChunk = {
+                            id: newChunkId,
+                            chatId: chatId,
+                            chatType: chatType,
+                            chunkIndex: newChunkIndex,
+                            messages: [message],
+                            timestamp: Date.now()
+                        };
+                        await this.db.messageChunks.add(newChunk);
+                    }
 
+                    // 3. Update the full message history in the LRU cache if it exists
+                    const cacheKey = `messages_${chatId}_${chatType}`;
+                    if (this.cache.has(cacheKey)) {
+                        const cachedMessages = this.getFromCache(cacheKey); // This also moves it to the end of the LRU
+                        if (cachedMessages) {
+                            cachedMessages.push(message);
+                            this.updateCache(cacheKey, cachedMessages);
+                        }
+                    }
+                    
                     return true;
                 } catch (error) {
-                    console.error('添加消息失败:', error);
+                    console.error('添加消息失败 (增量):', error);
                     return false;
                 }
             }
@@ -12300,7 +12327,7 @@ if (chat.history.length > 0 && chat.history.length % 100 === 0) {
     promptForBackupIfNeeded('history_milestone');
 }
 
-await saveData();
+await dataStorage.addMessage(currentChatId, currentChatType, message);
 renderChatList();
 
     // 新增：发送后清空引用状态
@@ -13289,6 +13316,7 @@ return `${seconds}秒`;
                                 };
                                 chat.history.push(message);
                                 addMessageBubble(message, targetChatId, targetChatType);
+                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                             }
                         } else {
                             // 原有逻辑处理其他格式
@@ -13333,6 +13361,7 @@ return `${seconds}秒`;
                                 };
                                 group.history.push(message);
                                 addMessageBubble(message, targetChatId, targetChatType);
+                                await dataStorage.addMessage(targetChatId, targetChatType, message);
                             }
                         }
                     }
