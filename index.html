@@ -13390,13 +13390,39 @@ return `${seconds}秒`;
                     delBtn.innerHTML = '<img src="https://i.postimg.cc/hGW6B0Wf/icons8-50.png" alt="删除" style="width: 22px; height: 22px; object-fit: contain;">';
                     
                     delBtn.addEventListener('click', async (ev) => {
-                        ev.stopPropagation();
+                        ev.stopPropagation(); // 阻止事件冒泡，避免触发父元素的点击事件
                         if (!confirm('确定要删除这个世界书条目吗？')) return;
-                        db.worldBooks = db.worldBooks.filter(wb => wb.id !== book.id);
-                        await dexieDB.groups.put(group);
+
+                        const bookIdToDelete = book.id;
+
+                        // 1. 直接从数据库中删除条目 (这是修复的关键)
+                        await dexieDB.worldBooks.delete(bookIdToDelete);
+
+                        // 2. 从内存数组中移除条目
+                        db.worldBooks = db.worldBooks.filter(wb => wb.id !== bookIdToDelete);
+
+                        // 3. 清理所有角色中的关联ID
+                        db.characters.forEach(char => {
+                            if (char.worldBookIds && char.worldBookIds.includes(bookIdToDelete)) {
+                                char.worldBookIds = char.worldBookIds.filter(id => id !== bookIdToDelete);
+                            }
+                        });
+
+                        // 4. 清理所有群组中的关联ID
+                        db.groups.forEach(group => {
+                            if (group.worldBookIds && group.worldBookIds.includes(bookIdToDelete)) {
+                                group.worldBookIds = group.worldBookIds.filter(id => id !== bookIdToDelete);
+                            }
+                        });
+
+                        // 5. 保存所有更改 (这将持久化角色和群组的更新)
+                        await saveData();
+
+                        // 6. 重新渲染列表并提示用户
                         renderWorldBookList();
-                        showToast && showToast('世界书已删除');
+                        showToast('世界书条目已删除');
                     });
+
 
                     li.style.position = 'relative';
                     li.appendChild(delBtn);
