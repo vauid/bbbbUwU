@@ -7,7 +7,7 @@
     <title>章鱼喷墨机</title>
     <meta name="theme-color" content="#FFFFFF"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/DZHdV88x/chan-135.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/VLDv52F8/chan-21.png">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <script src="https://unpkg.com/dompurify@2.3.8/dist/purify.min.js"></script>
@@ -5133,7 +5133,7 @@ border-top: none;
                             style="margin-top: 10px; width: auto; padding: 5px 15px; font-size: 14px;">恢复默认
                     </button>
                 </div>
-               <div class="panel panel-sm" style="padding:12px;border-radius:10px;border:1px solid var(--border-color,#e8e8ef);background:var(--panel-bg,#fff);box-shadow:var(--panel-shadow,0 4px 12px rgba(20,20,30,0.04));margin:10px 0;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><label for="bubble-preset-select" style="width:88px;color:var(--muted,#667);font-size:13px;">气泡预设</label><select id="bubble-preset-select" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--input-border,#e6e6ea);background:var(--input-bg,#fff);font-size:14px;"><option value="">— 选择预设 —</option></select><button type="button" id="apply-preset-btn" class="btn btn-primary" style="margin-left:8px;padding:7px 10px;border-radius:8px;">应用</button></div><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><label style="width:88px;color:var(--muted,#667);font-size:13px;">外观操作</label><button type="button" id="save-preset-btn" class="btn" style="padding:7px 10px;border-radius:8px;">另存为</button><button type="button" id="manage-presets-btn" class="btn" style="padding:7px 10px;border-radius:8px;">管理</button></div></div>
+                <div class="panel panel-sm" style="padding:12px;border-radius:10px;border:1px solid var(--border-color,#e8e8ef);background:var(--panel-bg,#fff);box-shadow:var(--panel-shadow,0 4px 12px rgba(20,20,30,0.04));margin:10px 0;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><label for="group-bubble-preset-select" style="width:88px;color:var(--muted,#667);font-size:13px;">气泡预设</label><select id="group-bubble-preset-select" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--input-border,#e6e6ea);background:var(--input-bg,#fff);font-size:14px;"><option value="">— 选择预设 —</option></select><button type="button" id="group-apply-preset-btn" class="btn btn-primary" style="margin-left:8px;padding:7px 10px;border-radius:8px;">应用</button></div><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;"><label style="width:88px;color:var(--muted,#667);font-size:13px;">外观操作</label><button type="button" id="group-save-preset-btn" class="btn" style="padding:7px 10px;border-radius:8px;">另存为</button><button type="button" id="group-manage-presets-btn" class="btn" style="padding:7px 10px;border-radius:8px;">管理</button></div></div>
                 <div class="form-group"><label for="setting-group-max-memory">最大记忆轮数</label><input type="number"
                                                                                                          id="setting-group-max-memory"
                                                                                                          value="10"
@@ -9021,8 +9021,8 @@ border-top: none;
            saveData();
        }
 
-       function populateBubblePresetSelect() {
-           const sel = document.getElementById('bubble-preset-select');
+       function populateBubblePresetSelect(selectId) { // 增加了参数
+           const sel = document.getElementById(selectId); // 使用参数
            if (!sel) return;
            const presets = _getBubblePresets();
            sel.innerHTML = '<option value="">— 选择预设 —</option>';
@@ -9085,7 +9085,7 @@ border-top: none;
            if (idx >= 0) presets[idx].css = css;
            else presets.push({name, css});
            _saveBubblePresets(presets);
-           populateBubblePresetSelect();
+           populateBubblePresetSelect('bubble-preset-select'); populateBubblePresetSelect('group-bubble-preset-select');
            (window.showToast && showToast('预设已保存')) || alert('预设已保存');
        }
 
@@ -9132,7 +9132,7 @@ border-top: none;
                    presetsAll[idx].name = newName;
                    _saveBubblePresets(presetsAll);
                    openManagePresetsModal(); // refresh
-                   populateBubblePresetSelect();
+                   populateBubblePresetSelect('bubble-preset-select'); populateBubblePresetSelect('group-bubble-preset-select');
                };
 
                const delBtn = document.createElement('button');
@@ -9145,7 +9145,7 @@ border-top: none;
                    presetsAll.splice(idx, 1);
                    _saveBubblePresets(presetsAll);
                    openManagePresetsModal();
-                   populateBubblePresetSelect();
+                   populateBubblePresetSelect('bubble-preset-select'); populateBubblePresetSelect('group-bubble-preset-select');
                };
 
                btnWrap.appendChild(applyBtn);
@@ -13680,7 +13680,7 @@ return `${seconds}秒`;
                 customCssTextarea.disabled = !useCustomCssCheckbox.checked;
                 const theme = colorThemes[e.theme || 'white_pink'];
                 updateBubbleCssPreview(privatePreviewBox, e.customBubbleCss, !e.useCustomBubbleCss, theme);
-                populateBubblePresetSelect();
+                populateBubblePresetSelect('bubble-preset-select');
                 populateMyPersonaSelect();
             }
         }
@@ -13789,6 +13789,12 @@ return `${seconds}秒`;
            const bubbleManageBtn = document.getElementById('manage-presets-btn');
            const bubbleModalClose = document.getElementById('close-presets-modal');
 
+           // --- 新增代码开始 ---
+           const groupBubbleApplyBtn = document.getElementById('group-apply-preset-btn');
+           const groupBubbleSaveBtn = document.getElementById('group-save-preset-btn');
+           const groupBubbleManageBtn = document.getElementById('group-manage-presets-btn');
+           // --- 新增代码结束 ---
+
            if (bubbleApplyBtn) bubbleApplyBtn.addEventListener('click', () => {
                const selVal = document.getElementById('bubble-preset-select').value;
                if (!selVal) return (window.showToast && showToast('请选择要应用的预设')) || alert('请选择要应用的预设');
@@ -13799,6 +13805,16 @@ return `${seconds}秒`;
            if (bubbleModalClose) bubbleModalClose.addEventListener('click', () => {
                document.getElementById('bubble-presets-modal').style.display = 'none';
            });
+
+           // --- 新增代码开始 ---
+           if (groupBubbleApplyBtn) groupBubbleApplyBtn.addEventListener('click', () => {
+               const selVal = document.getElementById('group-bubble-preset-select').value;
+               if (!selVal) return (window.showToast && showToast('请选择要应用的预设')) || alert('请选择要应用的预设');
+               applyPresetToCurrentChat(selVal);
+           });
+           if (groupBubbleSaveBtn) groupBubbleSaveBtn.addEventListener('click', saveCurrentTextareaAsPreset);
+           if (groupBubbleManageBtn) groupBubbleManageBtn.addEventListener('click', openManagePresetsModal);
+           // --- 新增代码结束 ---
 
            // My Persona Presets
            const personaSaveBtn = document.getElementById('mypersona-save-btn');
@@ -14159,7 +14175,7 @@ return `${seconds}秒`;
             groupCustomCssTextarea.disabled = !useGroupCustomCssCheckbox.checked;
             const theme = colorThemes[group.theme || 'white_pink'];
             updateBubbleCssPreview(groupPreviewBox, group.customBubbleCss, !group.useCustomBubbleCss, theme);
-            populateBubblePresetSelect();
+            populateBubblePresetSelect('group-bubble-preset-select');
         }
 
         function renderGroupMembersInSettings(group) {
@@ -15395,4 +15411,3 @@ function renderForumPosts(posts) {
 </body>
 
 </html>
-
