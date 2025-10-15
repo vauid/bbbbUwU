@@ -3642,12 +3642,24 @@
 }
 
 .collapsible-header {
-    padding: 15px 20px;
+    padding: 10px 15px; /* 调整内边距 */
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
     user-select: none; /* 防止选中文本 */
+}
+.category-toggle-area {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px; /* 增加点击区域 */
+}
+.category-select-area {
+    padding-right: 10px;
+    display: flex;
+    align-items: center;
 }
 
 .collapsible-header h4 {
@@ -4591,6 +4603,63 @@ border-top: none;
             font-size: 14px;
             font-weight: bold;
         }
+/* --- 世界书批量选择模式样式 --- */
+#world-book-multi-select-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid #eee;
+    z-index: 20;
+    animation: slideUp 0.3s ease-out;
+}
+
+.world-book-item.is-selecting {
+    cursor: pointer;
+}
+
+.world-book-item.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    background-color: var(--primary-color);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.world-book-item.selected {
+    padding-left: 50px !important;
+    background-color: #fff0f5;
+}
+
+
+.collapsible-header .category-checkbox {
+    margin-right: 15px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.collapsible-header h4 {
+    flex-grow: 1;
+}
     </style>
 </head>
 
@@ -4758,7 +4827,10 @@ border-top: none;
             <div class="title-container">
                 <h1 class="title">世界书</h1>
             </div>
-            <button class="action-btn" id="add-world-book-btn">+</button>
+            <div class="action-btn-group">
+                <button class="action-btn" id="add-world-book-btn">+</button>
+                <button class="action-btn" id="cancel-wb-multi-select-btn" style="display: none; font-size: 16px;">取消</button>
+            </div>
         </header>
         <main class="content">
             <ul class="list-container" id="world-book-list-container"></ul>
@@ -4767,6 +4839,10 @@ border-top: none;
                 <p>点击右上角的“+”创造第一个设定吧！</p>
             </div>
         </main>
+        <div id="world-book-multi-select-bar" style="display: none;">
+            <span id="world-book-select-count">已选择 0 项</span>
+            <button class="btn btn-danger" id="delete-selected-world-books-btn" style="width: auto; padding: 8px 16px;">删除已选</button>
+        </div>
     </div>
     <div id="edit-world-book-screen" class="screen">
         <header class="app-header">
@@ -6137,8 +6213,16 @@ border-top: none;
             'apiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
             'globalCssPresets', 'homeSignature', 'forumPosts', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
         ];
-        const appVersion = "1.1.0"; // Current app version
+        const appVersion = "1.2.0"; // Current app version
         const updateLog = [
+            {
+                version: "1.2.0",
+                date: "2025-10-15",
+                notes: [
+                    "新增：猫箱图床 (Catbox) 渲染机制，在当前绑定的表情包世界书中包含 'catbox' 关键词即可切换到猫箱模式，注意！iposting图床表情包和猫箱表情包不可同时渲染，只能选择一方。如：绑定了猫箱表情包世界书，就无法渲染过往iposting图床的表情包，不绑定则反之。",
+                    "新增：世界书批量删除功能，长按条目即可进入多选删除模式，支持分类全选。",
+                ]
+            },
             {
                 version: "1.1.0",
                 date: "2025-10-13",
@@ -6200,6 +6284,8 @@ border-top: none;
         let currentPomodoroTask = null, pomodoroInterval = null, pomodoroRemainingSeconds = 0, pomodoroCurrentSessionSeconds = 0, isPomodoroPaused = true, pomodoroPokeCount = 0, pomodoroIsInterrupted = false, currentPomodoroSettingsContext = null, pomodoroSessionHistory = [];
         let isStickerManageMode = false;
         let selectedStickerIds = new Set();
+        let isWorldBookMultiSelectMode = false;
+        let selectedWorldBookIds = new Set();
         let peekContentCache = {};
         let generatingPeekApps = new Set(); // Tracks which apps are currently generating content
         let selectedMessageIds = new Set();
@@ -7558,6 +7644,8 @@ border-top: none;
             setupPomodoroGlobalSettings(); // NEW: Setup global settings
             setupInsWidgetAvatarModal();
             setupHeartPhotoModal();
+            document.getElementById('delete-selected-world-books-btn').addEventListener('click', deleteSelectedWorldBooks);
+            document.getElementById('cancel-wb-multi-select-btn').addEventListener('click', exitWorldBookMultiSelectMode);
         };
 
         function setupInsWidgetAvatarModal() {
@@ -10157,6 +10245,7 @@ border-top: none;
                     <ul>
                         ${latestLog.notes.map(note => `<li>${note}</li>`).join('')}
                     </ul>
+                    <p style="font-size: 12px; color: #888; text-align: center; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">过往更新说明可在“教程”应用内查看。</p>
                 `;
     
                 modal.classList.add('visible');
@@ -10278,6 +10367,7 @@ border-top: none;
                 <ul>
                     ${latestLog.notes.map(note => `<li>${note}</li>`).join('')}
                 </ul>
+                <p style="font-size: 12px; color: #888; text-align: center; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">过往更新说明可在“教程”应用内查看。</p>
             `;
 
             modal.classList.add('visible');
@@ -13255,6 +13345,82 @@ return `${seconds}秒`;
             modal.style.display = 'flex';
         }
 
+        // --- 世界书批量删除相关函数 ---
+        function enterWorldBookMultiSelectMode(initialId, initialCategory = null) {
+            if (isWorldBookMultiSelectMode) return;
+            isWorldBookMultiSelectMode = true;
+
+            document.getElementById('add-world-book-btn').style.display = 'none';
+            document.getElementById('cancel-wb-multi-select-btn').style.display = 'inline-block';
+            document.getElementById('world-book-multi-select-bar').style.display = 'flex';
+            document.querySelector('#world-book-screen .content').style.paddingBottom = '70px';
+
+            selectedWorldBookIds.clear();
+            if (initialId) {
+                selectedWorldBookIds.add(initialId);
+            }
+
+            updateWorldBookSelectCount();
+            renderWorldBookList(initialCategory); // Pass the category to expand
+        }
+
+        function exitWorldBookMultiSelectMode() {
+            isWorldBookMultiSelectMode = false;
+
+            document.getElementById('add-world-book-btn').style.display = 'inline-block';
+            document.getElementById('cancel-wb-multi-select-btn').style.display = 'none';
+            document.getElementById('world-book-multi-select-bar').style.display = 'none';
+            document.querySelector('#world-book-screen .content').style.paddingBottom = '0';
+
+            selectedWorldBookIds.clear();
+            renderWorldBookList();
+        }
+
+        function toggleWorldBookSelection(bookId) {
+            const itemEl = worldBookListContainer.querySelector(`.world-book-item[data-id="${bookId}"]`);
+            if (selectedWorldBookIds.has(bookId)) {
+                selectedWorldBookIds.delete(bookId);
+                if(itemEl) itemEl.classList.remove('selected');
+            } else {
+                selectedWorldBookIds.add(bookId);
+                if(itemEl) itemEl.classList.add('selected');
+            }
+            updateWorldBookSelectCount();
+        }
+
+        function updateWorldBookSelectCount() {
+            const count = selectedWorldBookIds.size;
+            document.getElementById('world-book-select-count').textContent = `已选择 ${count} 项`;
+            document.getElementById('delete-selected-world-books-btn').disabled = count === 0;
+        }
+
+        async function deleteSelectedWorldBooks() {
+            const count = selectedWorldBookIds.size;
+            if (count === 0) return;
+
+            if (confirm(`确定要删除这 ${count} 个世界书条目吗？此操作不可恢复。`)) {
+                const idsToDelete = Array.from(selectedWorldBookIds);
+                
+                await dexieDB.worldBooks.bulkDelete(idsToDelete);
+                db.worldBooks = db.worldBooks.filter(book => !selectedWorldBookIds.has(book.id));
+                
+                db.characters.forEach(char => {
+                    if (char.worldBookIds) {
+                        char.worldBookIds = char.worldBookIds.filter(id => !selectedWorldBookIds.has(id));
+                    }
+                });
+                db.groups.forEach(group => {
+                    if (group.worldBookIds) {
+                        group.worldBookIds = group.worldBookIds.filter(id => !selectedWorldBookIds.has(id));
+                    }
+                });
+
+                await saveData();
+                showToast(`已成功删除 ${count} 个条目`);
+                exitWorldBookMultiSelectMode();
+            }
+        }
+
         function setupWorldBookApp() {
             addWorldBookBtn.addEventListener('click', () => {
                 currentEditingWorldBookId = null;
@@ -13286,68 +13452,95 @@ return `${seconds}秒`;
                 switchScreen('world-book-screen');
             });
             worldBookListContainer.addEventListener('click', e => {
-                const header = e.target.closest('.collapsible-header');
-                if (header) {
-                    header.parentElement.classList.toggle('open');
-                    return;
-                }
-                
-                const item = e.target.closest('.world-book-item');
-                if (item) {
-                    const book = db.worldBooks.find(wb => wb.id === item.dataset.id);
-                    if (book) {
-                        currentEditingWorldBookId = book.id;
-                        worldBookIdInput.value = book.id;
-                        worldBookNameInput.value = book.name;
-                        worldBookContentInput.value = book.content;
-                        document.getElementById('world-book-category').value = book.category || '';
-                        document.querySelector(`input[name="world-book-position"][value="${book.position}"]`).checked = true;
-                        switchScreen('edit-world-book-screen');
+                const worldBookItem = e.target.closest('.world-book-item');
+
+                if (isWorldBookMultiSelectMode) {
+                    // 1. 点击分类的多选框
+                    if (e.target.matches('.category-checkbox')) {
+                        const category = e.target.dataset.category;
+                        const booksInCategory = db.worldBooks.filter(b => (b.category || '未分类') === category);
+                        const bookIdsInCategory = booksInCategory.map(b => b.id);
+                        const shouldSelectAll = e.target.checked;
+
+                        bookIdsInCategory.forEach(bookId => {
+                            if (shouldSelectAll) {
+                                selectedWorldBookIds.add(bookId);
+                            } else {
+                                selectedWorldBookIds.delete(bookId);
+                            }
+                        });
+                        renderWorldBookList(category); // Re-render to show selection changes
+                        updateWorldBookSelectCount();
+                        return;
+                    }
+
+                    // 2. 点击单个条目进行选择
+                    if (worldBookItem) {
+                        toggleWorldBookSelection(worldBookItem.dataset.id);
+                        // Re-render to update the checkmark and category checkbox state
+                        const category = worldBookItem.closest('.collapsible-section').dataset.category;
+                        renderWorldBookList(category);
+                        return;
+                    }
+                    
+                    // 3. 点击分类标题区域进行展开/折叠
+                    if (e.target.closest('.category-toggle-area')) {
+                        e.target.closest('.collapsible-section').classList.toggle('open');
+                        return;
+                    }
+
+                } else { // 非多选模式
+                    // 1. 点击分类标题进行展开/折叠
+                    if (e.target.closest('.collapsible-header')) {
+                        e.target.closest('.collapsible-section').classList.toggle('open');
+                        return;
+                    }
+                    
+                    // 2. 点击条目进入编辑
+                    if (worldBookItem && !e.target.closest('.action-btn')) {
+                        const book = db.worldBooks.find(wb => wb.id === worldBookItem.dataset.id);
+                        if (book) {
+                            currentEditingWorldBookId = book.id;
+                            worldBookIdInput.value = book.id;
+                            worldBookNameInput.value = book.name;
+                            worldBookContentInput.value = book.content;
+                            document.getElementById('world-book-category').value = book.category || '';
+                            document.querySelector(`input[name="world-book-position"][value="${book.position}"]`).checked = true;
+                            switchScreen('edit-world-book-screen');
+                        }
                     }
                 }
             });
-            worldBookListContainer.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return;
+            worldBookListContainer.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const item = e.target.closest('.world-book-item');
+                if (item) {
+                    const category = item.closest('.collapsible-section')?.dataset.category;
+                    enterWorldBookMultiSelectMode(item.dataset.id, category);
+                }
+            });
+            worldBookListContainer.addEventListener('touchstart', (e) => {
                 const item = e.target.closest('.world-book-item');
                 if (!item) return;
                 longPressTimer = setTimeout(() => {
-                    const bookId = item.dataset.id;
-                    const menuItems = [{
-                        label: '删除',
-                        danger: true,
-                        action: async () => {
-                            if (confirm('确定要删除这个世界书条目吗？')) {
-                                db.worldBooks = db.worldBooks.filter(wb => wb.id !== bookId);
-                                db.characters.forEach(char => {
-                                    char.worldBookIds = (char.worldBookIds || []).filter(id => id !== bookId);
-                                });
-                                db.groups.forEach(group => {
-                                    group.worldBookIds = (group.worldBookIds || []).filter(id => id !== bookId);
-                                });
-                                await saveData();
-                                renderWorldBookList();
-                                showToast('条目已删除');
-                            }
-                        }
-                    }];
-                    createContextMenu(menuItems, e.clientX, e.clientY);
+                    const category = item.closest('.collapsible-section')?.dataset.category;
+                    enterWorldBookMultiSelectMode(item.dataset.id, category);
                 }, 500);
             });
             worldBookListContainer.addEventListener('mouseup', () => clearTimeout(longPressTimer));
             worldBookListContainer.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
+            worldBookListContainer.addEventListener('touchend', () => clearTimeout(longPressTimer));
+            worldBookListContainer.addEventListener('touchmove', () => clearTimeout(longPressTimer));
         }
 
-        function renderWorldBookList() {
-            worldBookListContainer.innerHTML = ''; // 清空容器
+        function renderWorldBookList(expandedCategory = null) {
+            worldBookListContainer.innerHTML = '';
             noWorldBooksPlaceholder.style.display = db.worldBooks.length === 0 ? 'block' : 'none';
-
             if (db.worldBooks.length === 0) return;
 
             const groupedBooks = db.worldBooks.reduce((acc, book) => {
                 const category = book.category || '未分类';
-                if (!acc[category]) {
-                    acc[category] = [];
-                }
+                if (!acc[category]) acc[category] = [];
                 acc[category].push(book);
                 return acc;
             }, {});
@@ -13360,72 +13553,78 @@ return `${seconds}秒`;
 
             sortedCategories.forEach(category => {
                 const section = document.createElement('div');
-                section.className = 'collapsible-section'; // Using existing style
+                section.className = 'collapsible-section';
+                section.dataset.category = category; // Add category data attribute
+
+                // Expand the specific category if provided
+                if (isWorldBookMultiSelectMode && category === expandedCategory) {
+                    section.classList.add('open');
+                }
 
                 const header = document.createElement('div');
                 header.className = 'collapsible-header';
-                header.innerHTML = `<h4>${category}</h4><span class="collapsible-arrow">▼</span>`;
                 
+                let checkboxHTML = '';
+                if (isWorldBookMultiSelectMode) {
+                    const allInCategory = groupedBooks[category].every(book => selectedWorldBookIds.has(book.id));
+                    checkboxHTML = `<input type="checkbox" class="category-checkbox" data-category="${category}" ${allInCategory ? 'checked' : ''}>`;
+                }
+                
+                header.innerHTML = `
+                    <div class="category-select-area">
+                        ${checkboxHTML}
+                    </div>
+                    <div class="category-toggle-area">
+                        <h4>${category}</h4>
+                        <span class="collapsible-arrow">▼</span>
+                    </div>
+                `;
+
                 const content = document.createElement('div');
                 content.className = 'collapsible-content';
-
                 const categoryList = document.createElement('ul');
                 categoryList.className = 'list-container';
-                categoryList.style.padding = '0'; // Remove default ul padding
+                categoryList.style.padding = '0';
 
                 groupedBooks[category].forEach(book => {
                     const li = document.createElement('li');
                     li.className = 'list-item world-book-item';
                     li.dataset.id = book.id;
-                    li.innerHTML = `
-                        <div class="item-details" style="padding-left: 0;">
-                            <div class="item-name">${book.name}</div>
-                            <div class="item-preview">${book.content}</div>
-                        </div>
-                    `;
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'action-btn';
-                    delBtn.style.cssText = 'position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 6px; border: none; background: transparent;';
-                    delBtn.title = '删除世界书';
-                    delBtn.innerHTML = '<img src="https://i.postimg.cc/hGW6B0Wf/icons8-50.png" alt="删除" style="width: 22px; height: 22px; object-fit: contain;">';
+
+                    if (isWorldBookMultiSelectMode) {
+                        li.classList.add('is-selecting');
+                        if (selectedWorldBookIds.has(book.id)) {
+                            li.classList.add('selected');
+                        }
+                    }
+
+                    li.innerHTML = `<div class="item-details" style="padding-left: 0;"><div class="item-name">${book.name}</div><div class="item-preview">${book.content}</div></div>`;
                     
-                    delBtn.addEventListener('click', async (ev) => {
-                        ev.stopPropagation(); // 阻止事件冒泡，避免触发父元素的点击事件
-                        if (!confirm('确定要删除这个世界书条目吗？')) return;
-
-                        const bookIdToDelete = book.id;
-
-                        // 1. 直接从数据库中删除条目 (这是修复的关键)
-                        await dexieDB.worldBooks.delete(bookIdToDelete);
-
-                        // 2. 从内存数组中移除条目
-                        db.worldBooks = db.worldBooks.filter(wb => wb.id !== bookIdToDelete);
-
-                        // 3. 清理所有角色中的关联ID
-                        db.characters.forEach(char => {
-                            if (char.worldBookIds && char.worldBookIds.includes(bookIdToDelete)) {
-                                char.worldBookIds = char.worldBookIds.filter(id => id !== bookIdToDelete);
-                            }
+                    if (!isWorldBookMultiSelectMode) {
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'action-btn';
+                        delBtn.style.cssText = 'position: absolute; right: 8px; top: 50%; transform: translateY(-50%); padding: 6px; border: none; background: transparent;';
+                        delBtn.title = '删除世界书';
+                        delBtn.innerHTML = '<img src="https://i.postimg.cc/hGW6B0Wf/icons8-50.png" alt="删除" style="width: 22px; height: 22px; object-fit: contain;">';
+                        delBtn.addEventListener('click', async (ev) => {
+                            ev.stopPropagation();
+                            if (!confirm('确定要删除这个世界书条目吗？')) return;
+                            const bookIdToDelete = book.id;
+                            await dexieDB.worldBooks.delete(bookIdToDelete);
+                            db.worldBooks = db.worldBooks.filter(wb => wb.id !== bookIdToDelete);
+                            db.characters.forEach(char => {
+                                if (char.worldBookIds) char.worldBookIds = char.worldBookIds.filter(id => id !== bookIdToDelete);
+                            });
+                            db.groups.forEach(group => {
+                                if (group.worldBookIds) group.worldBookIds = group.worldBookIds.filter(id => id !== bookIdToDelete);
+                            });
+                            await saveData();
+                            renderWorldBookList();
+                            showToast('世界书条目已删除');
                         });
-
-                        // 4. 清理所有群组中的关联ID
-                        db.groups.forEach(group => {
-                            if (group.worldBookIds && group.worldBookIds.includes(bookIdToDelete)) {
-                                group.worldBookIds = group.worldBookIds.filter(id => id !== bookIdToDelete);
-                            }
-                        });
-
-                        // 5. 保存所有更改 (这将持久化角色和群组的更新)
-                        await saveData();
-
-                        // 6. 重新渲染列表并提示用户
-                        renderWorldBookList();
-                        showToast('世界书条目已删除');
-                    });
-
-
-                    li.style.position = 'relative';
-                    li.appendChild(delBtn);
+                        li.style.position = 'relative';
+                        li.appendChild(delBtn);
+                    }
                     categoryList.appendChild(li);
                 });
 
