@@ -1,6 +1,6 @@
 {
   "name": "UwU",
-  "short_name": "章鱼喷墨机",
+  "short_name": "UwU",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#FFFFFF",
@@ -30,6 +30,7 @@
   ]
 
 }
+
 
 
 
