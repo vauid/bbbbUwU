@@ -6257,8 +6257,20 @@ border-top: none;
             'apiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
             'globalCssPresets', 'homeSignature', 'forumPosts', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
         ];
-        const appVersion = "1.3.0"; // Current app version
+        const appVersion = "1.4.0"; // Current app version
         const updateLog = [
+            {
+        version: "1.4.0",
+        date: "2025-12-12",
+        notes: [
+            "本次更新：GitHub云端备份功能上线！指路→主屏幕的【教程】app→划到页面最底部即可看到。（UI从其他地方搬的，懒得做美化了！将就用吧对不起！）",
+            "主要功能：一键上传/恢复最新备份。配置好后，备份数据直接存到你自己的GitHub私人仓库里，恢复即从你的仓库中自动选取时间戳最新的备份文件导入恢复。",
+            "配置太难不会弄？别慌！点击配置栏旁边的【蓝色小问号图标】，里面内置了手把手的保姆级教程。不要被英文吓到，跟着步骤点几下，配置一次，终身受益。",
+            "测试中功能，不一定有用：配置完成后，可根据自身需要开启【自动备份开关】！设置好频率（比如每24小时），以后只要你打开这个网页，它就会在后台悄悄帮你把存档上传到云端，再也不用担心忘记备份了。",
+            "特别提醒：为了你的数据安全，在GitHub账户中获取的 Token (以 ghp_ 开头的那一串) 和仓库名称请务必自己保存好，不要发给别人哦！",
+            "过往更新说明重复观看指路→主屏幕的教程app→更新说明！",
+            ]
+            },
             {
                 version: "1.3.0",
                 date: "2025-11-11",
@@ -7758,6 +7770,11 @@ border-top: none;
             setupHeartPhotoModal();
             document.getElementById('delete-selected-world-books-btn').addEventListener('click', deleteSelectedWorldBooks);
             document.getElementById('cancel-wb-multi-select-btn').addEventListener('click', exitWorldBookMultiSelectMode);
+            
+            // 初始化 GitHub 备份管理器
+            if(window.GitHubMgr) {
+                window.GitHubMgr.init();
+            }
         };
 
         function setupInsWidgetAvatarModal() {
@@ -10818,7 +10835,184 @@ border-top: none;
 
             tutorialContentArea.appendChild(backupDataBtn);
             tutorialContentArea.appendChild(importDataBtn);
-        }
+
+            // --- 插入 GitHub 备份 UI (逻辑分离版) ---
+            const githubSection = document.createElement('div');
+            
+            // 定义图标 SVG，避免在 HTML 字符串中出现引号混乱
+            const iconEyeOpen = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+            const iconEyeClosed = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
+            // 1. 渲染 HTML 结构 (注意：这里去掉了复杂的 onclick，只保留了 id)
+            githubSection.innerHTML = `
+                <div style="font-size:0.89rem; color:#999; margin:20px 0 8px;">云端备份 (GitHub)</div>
+                <div class="btn-white" style="display:block; cursor:default; background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px;">
+                    <div id="gh-collapse-header" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding-bottom:5px;">
+                        <div style="display:flex; align-items:center;">
+                            <span style="color:#333; font-weight:500;">🔧 配置参数</span>
+                            <div id="gh-help-btn" style="margin-left:8px; display:flex; align-items:center; padding:2px; cursor:pointer;">
+                                <svg style="width:16px; height:16px; color:#1890ff;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            </div>
+                        </div>
+                        <svg class="toggle-icon" style="width:14px; height:14px; color:#999; transition:transform 0.3s;" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+                    </div>
+
+                    <div id="gh-config-area" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #eee;">
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:0.81rem; color:#666; margin-bottom:5px;">GitHub Token</div>
+                            <div style="position:relative;">
+                                <input type="password" id="gh-token-input" placeholder="ghp_xxxx..." style="width:100%; border:1px solid #eee; padding:8px; padding-right:35px; border-radius:4px; font-size:0.89rem;">
+                                <div id="gh-eye-btn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#999; cursor:pointer; display:flex;">
+                                    ${iconEyeClosed}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:0.81rem; color:#666; margin-bottom:5px;">仓库路径 (用户名/仓库名)</div>
+                            <input type="text" id="gh-repo-input" placeholder="username/repo" style="width:100%; border:1px solid #eee; padding:8px; border-radius:4px; font-size:0.89rem;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #f5f5f5; padding-top:10px;">
+                        <span>自动备份开关</span>
+                        <label class="switch" style="position:relative; display:inline-block; width:40px; height:24px;">
+                            <input type="checkbox" id="gh-auto-switch" style="opacity:0; width:0; height:0;">
+                            <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:24px;" id="gh-switch-slider"></span>
+                            <style>
+                                #gh-auto-switch:checked + #gh-switch-slider { background-color: #333; }
+                                #gh-switch-slider:before { position:absolute; content:""; height:16px; width:16px; left:4px; bottom:4px; background-color:white; transition:.4s; border-radius:50%; }
+                                #gh-auto-switch:checked + #gh-switch-slider:before { transform: translateX(16px); }
+                            </style>
+                        </label>
+                    </div>
+
+                    <div id="gh-interval-setting" style="display:none; justify-content:space-between; align-items:center; margin-top:10px;">
+                        <span style="font-size:0.89rem; color:#666;">备份频率</span>
+                        <select id="gh-interval-select" style="border:1px solid #eee; padding:5px; border-radius:4px; font-size:0.89rem; background:#fff;">
+                            <option value="24">每 24 小时</option>
+                            <option value="36">每 36 小时</option>
+                            <option value="48">每 48 小时</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-top:15px; display:flex; gap:10px;">
+                        <div id="gh-backup-btn" style="flex:1; background:#333; color:#fff; text-align:center; padding:8px; border-radius:4px; font-size:0.89rem; cursor:pointer;">立即备份</div>
+                        <div id="gh-restore-btn" style="flex:1; background:#1890ff; color:#fff; text-align:center; padding:8px; border-radius:4px; font-size:0.89rem; cursor:pointer;">恢复最新</div>
+                        <div id="gh-check-btn" style="flex:1; background:#f5f5f5; color:#666; text-align:center; padding:8px; border-radius:4px; font-size:0.89rem; cursor:pointer;">检查状态</div>
+                    </div>
+                    
+                    <div id="gh-status-msg" style="margin-top:10px; font-size:0.74rem; color:#999;"></div>
+                </div>
+            `;
+            
+            // 2. 将面板添加到页面中
+            tutorialContentArea.appendChild(githubSection);
+
+            // 3. 渲染帮助弹窗 (修复版：解决内容不显示的问题)
+            const existingOverlay = document.getElementById('gh-help-overlay');
+            if (existingOverlay) existingOverlay.remove();
+
+            const helpOverlay = document.createElement('div');
+            helpOverlay.id = 'gh-help-overlay';
+            // 使用 flex 布局让内容垂直水平居中
+            helpOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: none; align-items: center; justify-content: center;';
+            
+            // 点击灰色背景关闭
+            helpOverlay.onclick = function(e) { 
+                if(e.target === this) this.style.display = 'none'; 
+            };
+            
+            // 关键修改：
+            // 1. 将 class="context-menu" 改为 class="modal-window"
+            // 2. 移除 onclick="event.stopPropagation()"，因为 modal-window 默认行为更好控制
+            helpOverlay.innerHTML = `
+                <div class="modal-window" style="width: 85%; max-height: 80vh; overflow-y: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);">
+                    <h3 style="margin-top:0; margin-bottom:15px; text-align:center; font-size:1.1rem; color: var(--primary-color);">GitHub 配置指南</h3>
+                    
+                    <h4 style="margin:10px 0 5px; color:#333;">1. 获取 Token</h4>
+                    <ol style="padding-left:20px; font-size:0.89rem; color:#555; line-height:1.6;">
+                        <li>登录 GitHub，点击头像 → <strong>Settings</strong></li>
+                        <li>左侧菜单到底 → <strong>Developer settings</strong></li>
+                        <li><strong>Personal access tokens</strong> → <strong>Tokens (classic)</strong></li>
+                        <li>Generate new token (classic)</li>
+                        <li>Expiration 选 <strong>No expiration</strong></li>
+                        <li><strong style="color:#d32f2f;">Scopes 必须勾选 repo (包含所有子项)</strong></li>
+                        <li>点击 Generate，复制 ghp_ 开头的字符。<br><strong style="color:#d32f2f;">一定要现在复制并保存好！一旦刷新页面，你就再也看不到它了。</strong></li>
+                    </ol>
+
+                    <h4 style="margin:15px 0 5px; color:#333;">2. 创建仓库</h4>
+                    <ol style="padding-left:20px; font-size:0.89rem; color:#555; line-height:1.6;">
+                        <li>右上角 + 号 → <strong>New repository</strong></li>
+                        <li>Repository name 填个名字</li>
+                        <li>建议选 <strong>Private</strong> (私有)</li>
+                        <li>点击 Create repository</li>
+                    </ol>
+
+                    <h4 style="margin:15px 0 5px; color:#333;">3. 填写示例</h4>
+                    <ul style="padding-left:20px; font-size:0.89rem; color:#555; line-height:1.6;">
+                        <li>Token: <code>ghp_xxxxxxxxxxxx...</code></li>
+                        <li>仓库路径: <code>用户名/仓库名</code></li>
+                    </ul>
+
+                    <div style="margin-top:20px; text-align: center;">
+                        <button class="btn btn-primary" onclick="document.getElementById('gh-help-overlay').style.display='none'">我学会了</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(helpOverlay);
+
+            // ==========================================
+            // 4. 绑定事件监听 (这是修复的关键部分)
+            // ==========================================
+            
+            // 折叠/展开面板
+            document.getElementById('gh-collapse-header').addEventListener('click', function() {
+                const area = document.getElementById('gh-config-area');
+                const icon = this.querySelector('.toggle-icon');
+                if (area.style.display === 'none') {
+                    area.style.display = 'block';
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    area.style.display = 'none';
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            // 帮助按钮点击
+            document.getElementById('gh-help-btn').addEventListener('click', function(e) {
+                e.stopPropagation(); // 防止触发折叠
+                document.getElementById('gh-help-overlay').style.display = 'flex';
+            });
+
+            // 小眼睛（显示/隐藏密码）点击
+            document.getElementById('gh-eye-btn').addEventListener('click', function() {
+                const input = document.getElementById('gh-token-input');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.innerHTML = iconEyeOpen;
+                } else {
+                    input.type = 'password';
+                    this.innerHTML = iconEyeClosed;
+                }
+            });
+
+            // 输入框变更保存
+            const saveHandler = () => { if(window.GitHubMgr) window.GitHubMgr.saveConfig(); };
+            document.getElementById('gh-token-input').addEventListener('change', saveHandler);
+            document.getElementById('gh-repo-input').addEventListener('change', saveHandler);
+            document.getElementById('gh-auto-switch').addEventListener('change', saveHandler);
+            document.getElementById('gh-interval-select').addEventListener('change', saveHandler);
+
+            // 底部操作按钮
+            document.getElementById('gh-backup-btn').addEventListener('click', () => window.GitHubMgr.testUpload());
+            document.getElementById('gh-restore-btn').addEventListener('click', () => window.GitHubMgr.restoreLatest());
+            document.getElementById('gh-check-btn').addEventListener('click', () => window.GitHubMgr.checkStatus());
+
+            // 初始化 GitHubMgr 的 UI 状态
+            if(window.GitHubMgr) {
+                window.GitHubMgr.init();
+            }
+        } // 结束 renderTutorialContent 函数
 
         // --- Chat List & Chat Room ---
         function setupChatListScreen() {
@@ -14916,6 +15110,274 @@ return `${seconds}秒`;
                 };
             }
         }
+
+        // --- GitHub Manager ---
+        const GitHubMgr = {
+            config: { token: '', repo: '', auto: false, interval: 48, lastTime: 0 },
+            
+            // 初始化：读取配置，更新 UI，检查自动备份
+            init: () => {
+                const confStr = localStorage.getItem('gh_config');
+                if(confStr) GitHubMgr.config = JSON.parse(confStr);
+                
+                // 填充 UI
+                const tokenInput = document.getElementById('gh-token-input');
+                const repoInput = document.getElementById('gh-repo-input');
+                const autoSwitch = document.getElementById('gh-auto-switch');
+                if(tokenInput) tokenInput.value = GitHubMgr.config.token || '';
+                if(repoInput) repoInput.value = GitHubMgr.config.repo || '';
+                if(autoSwitch) {
+                    autoSwitch.checked = GitHubMgr.config.auto || false;
+                    document.getElementById('gh-interval-setting').style.display = autoSwitch.checked ? 'flex' : 'none';
+                }
+                if(document.getElementById('gh-interval-select')) {
+                    document.getElementById('gh-interval-select').value = GitHubMgr.config.interval || 48;
+                }
+                
+                // 尝试触发自动备份
+                if(GitHubMgr.config.auto) GitHubMgr.checkAndBackup();
+                GitHubMgr.updateStatusText();
+            },
+            
+            // 保存配置
+            saveConfig: () => {
+                const token = document.getElementById('gh-token-input').value.trim();
+                const repo = document.getElementById('gh-repo-input').value.trim();
+                const auto = document.getElementById('gh-auto-switch').checked;
+                const interval = parseInt(document.getElementById('gh-interval-select').value);
+                
+                GitHubMgr.config.token = token;
+                GitHubMgr.config.repo = repo;
+                GitHubMgr.config.auto = auto;
+                GitHubMgr.config.interval = interval;
+                
+                document.getElementById('gh-interval-setting').style.display = auto ? 'flex' : 'none';
+                
+                localStorage.setItem('gh_config', JSON.stringify(GitHubMgr.config));
+                GitHubMgr.updateStatusText();
+                
+                // 立即检查一次是否需要自动备份
+                if(auto) GitHubMgr.checkAndBackup();
+            },
+            
+            // 更新状态文字
+            updateStatusText: () => {
+                const el = document.getElementById('gh-status-msg');
+                if(!el) return;
+                if(!GitHubMgr.config.lastTime) el.innerText = '从未备份过';
+                else {
+                    const date = new Date(GitHubMgr.config.lastTime);
+                    const nextTime = new Date(GitHubMgr.config.lastTime + (GitHubMgr.config.interval || 48) * 3600000);
+                    el.innerText = `上次: ${date.toLocaleString()} (下次约: ${nextTime.toLocaleString()})`;
+                }
+            },
+            
+            // 检查是否需要自动备份
+            checkAndBackup: async () => {
+                if(!GitHubMgr.config.token || !GitHubMgr.config.repo || !GitHubMgr.config.auto) return;
+                const now = Date.now();
+                const interval = GitHubMgr.config.interval || 48;
+                const hours = (now - (GitHubMgr.config.lastTime || 0)) / (1000 * 60 * 60);
+                
+                if(hours >= interval) {
+                    console.log(`距离上次备份已过 ${hours.toFixed(1)} 小时，触发自动备份...`);
+                    
+                    // 显示轻量级提示
+                    const toast = document.createElement('div');
+                    toast.style.cssText = 'position:fixed; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:8px 15px; border-radius:20px; font-size:12px; z-index:9999; pointer-events:none; transition:opacity 0.5s;';
+                    toast.innerText = '正在后台准备自动备份...';
+                    document.body.appendChild(toast);
+                    
+                    try {
+                        await GitHubMgr.performUpload((msg) => { toast.innerText = '自动备份: ' + msg; });
+                        toast.innerText = '自动备份成功！';
+                        setTimeout(() => toast.remove(), 3000);
+                    } catch(e) {
+                        console.error('自动备份失败', e);
+                        toast.innerText = '自动备份失败: ' + e.message;
+                        setTimeout(() => toast.remove(), 5000);
+                    }
+                }
+            },
+            
+            // 手动点击备份
+            testUpload: async () => {
+                if(!GitHubMgr.config.token || !GitHubMgr.config.repo) return alert('请先填写 Token 和 仓库路径');
+                // 这里复用 showToast 而不是 alert
+                showToast('开始备份...');
+                const btn = event.target;
+                const originalText = btn.innerText;
+                btn.innerText = '备份中...';
+                btn.style.pointerEvents = 'none';
+                
+                try {
+                    await GitHubMgr.performUpload((msg) => { showToast(msg); });
+                    showToast('上传成功！');
+                } catch(e) {
+                    showToast('上传失败: ' + e.message);
+                } finally {
+                    btn.innerText = originalText;
+                    btn.style.pointerEvents = 'auto';
+                }
+            },
+            
+            // 执行上传逻辑 (核心 - 使用 Gzip 适配)
+            performUpload: async (onProgress) => {
+                // 1. 生成数据对象 (复用现有的 createFullBackupData)
+                onProgress('正在打包数据...');
+                const backupData = await createFullBackupData();
+                const jsonString = JSON.stringify(backupData);
+                
+                // 2. 压缩数据 (复用现有的 CompressionStream)
+                onProgress('正在压缩...');
+                const dataBlob = new Blob([jsonString]);
+                const compressionStream = new CompressionStream('gzip');
+                const compressedStream = dataBlob.stream().pipeThrough(compressionStream);
+                const compressedBlob = await new Response(compressedStream, { headers: { 'Content-Type': 'application/octet-stream' } }).blob();
+                
+                // 3. 转 Base64
+                onProgress('正在编码...');
+                const base64Content = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const res = reader.result;
+                        const base64 = res.split(',')[1]; // 去除 data:application/octet-stream;base64, 头
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(compressedBlob);
+                });
+
+                // 4. 上传 GitHub
+                onProgress('正在上传至 GitHub...');
+                const dateStr = new Date().toISOString().slice(0, 10);
+                const fileName = `AutoBackup_${dateStr}_${Date.now()}.ee`; // 使用 .ee 后缀
+                const path = fileName;
+                
+                const url = `https://api.github.com/repos/${GitHubMgr.config.repo}/contents/${path}`;
+                
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GitHubMgr.config.token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: `Auto backup ${dateStr}`,
+                        content: base64Content
+                    })
+                });
+
+                if(!response.ok) {
+                    const errJson = await response.json();
+                    throw new Error(errJson.message || 'GitHub API Error');
+                }
+
+                // 5. 更新时间
+                GitHubMgr.config.lastTime = Date.now();
+                localStorage.setItem('gh_config', JSON.stringify(GitHubMgr.config));
+                GitHubMgr.updateStatusText();
+            },
+            
+            // 检查连接状态
+            checkStatus: async () => {
+                if(!GitHubMgr.config.token || !GitHubMgr.config.repo) return showToast('未配置');
+                const url = `https://api.github.com/repos/${GitHubMgr.config.repo}`;
+                try {
+                    const res = await fetch(url, { headers: { 'Authorization': `token ${GitHubMgr.config.token}` } });
+                    if(res.ok) {
+                        const data = await res.json();
+                        alert(`连接成功！\n仓库: ${data.full_name}\n私有: ${data.private}\n说明: 配置有效`);
+                    } else {
+                        alert('连接失败，请检查 Token 或 仓库路径');
+                    }
+                } catch(e) { alert('网络错误: ' + e.message); }
+            },
+            
+            // 恢复最新备份 (核心 - 使用 Gzip 适配)
+            restoreLatest: async () => {
+                if(!GitHubMgr.config.token || !GitHubMgr.config.repo) return alert('请先在配置中填写 Token 和 仓库路径');
+                if(!confirm('⚠️ 警告：这将下载最新的自动备份并覆盖当前所有数据！\n此操作不可撤销！\n\n确定要继续吗？')) return;
+
+                showToast('正在连接 GitHub...');
+                const btn = event.target;
+                const originalText = btn.innerText;
+                btn.innerText = '恢复中...';
+                btn.style.pointerEvents = 'none';
+
+                try {
+                    // 1. 获取文件列表
+                    const url = `https://api.github.com/repos/${GitHubMgr.config.repo}/contents/`;
+                    const res = await fetch(url, { headers: { 'Authorization': `token ${GitHubMgr.config.token}` } });
+                    
+                    if(!res.ok) {
+                        if(res.status === 404) throw new Error('仓库不存在或路径错误');
+                        if(res.status === 401) throw new Error('Token 无效或无权限');
+                        throw new Error('获取列表失败: ' + res.status);
+                    }
+                    
+                    const files = await res.json();
+                    
+                    // 2. 筛选备份文件 (.ee)
+                    const backups = files.filter(f => f.name.startsWith('AutoBackup_') && f.name.endsWith('.ee'));
+                    if(backups.length === 0) throw new Error('仓库中没有找到任何 .ee 备份文件');
+
+                    // 3. 按文件名中的时间戳降序排序
+                    backups.sort((a, b) => {
+                        const getTs = (name) => {
+                            const match = name.match(/_(\d+)\.ee$/);
+                            return match ? parseInt(match[1]) : 0;
+                        };
+                        return getTs(b.name) - getTs(a.name);
+                    });
+
+                    const latest = backups[0];
+                    showToast('正在下载: ' + latest.name);
+
+                    // 4. 下载文件
+                    const dlUrl = `https://api.github.com/repos/${GitHubMgr.config.repo}/contents/${latest.name}`;
+                    const dlRes = await fetch(dlUrl, {
+                        headers: {
+                            'Authorization': `token ${GitHubMgr.config.token}`,
+                            'Accept': 'application/vnd.github.v3.raw'
+                        }
+                    });
+
+                    if(!dlRes.ok) throw new Error('下载文件失败: ' + dlRes.status);
+                    
+                    // 5. 解压数据 (Gzip)
+                    showToast('下载完成，正在解压...');
+                    const blob = await dlRes.blob();
+                    
+                    const decompressionStream = new DecompressionStream('gzip');
+                    const decompressedStream = blob.stream().pipeThrough(decompressionStream);
+                    const jsonString = await new Response(decompressedStream).text();
+                    
+                    const data = JSON.parse(jsonString);
+                    
+                    // 6. 导入数据 (复用现有的 importBackupData)
+                    showToast('解压完成，开始导入...');
+                    const importResult = await importBackupData(data);
+
+                    if (importResult.success) {
+                        showToast(`恢复成功！${importResult.message} 应用即将刷新。`);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        throw new Error(importResult.error);
+                    }
+
+                } catch(e) {
+                    console.error(e);
+                    alert('恢复失败: ' + e.message);
+                    btn.innerText = originalText;
+                    btn.style.pointerEvents = 'auto';
+                }
+            }
+        };
+        window.GitHubMgr = GitHubMgr;
         
                 function setupForumBindingFeature() {
             const forumLinkBtn = document.getElementById('forum-link-btn');
