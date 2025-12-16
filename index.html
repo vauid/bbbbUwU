@@ -6257,8 +6257,17 @@ border-top: none;
             'apiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
             'globalCssPresets', 'homeSignature', 'forumPosts', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
         ];
-        const appVersion = "1.4.0"; // Current app version
+        const appVersion = "1.5.0"; // Current app version
         const updateLog = [
+            {
+                version: "1.5.0",
+                date: "2025-12-17",
+                notes: [
+                    "本次更新：应该大大降低了日记生成出错的概率，感谢匿名小宝自发修改测试并提供的修复代码！",
+                    "匿名小宝捎来讯息：感谢所有一直为爱发电、无私分享代码的开发小手机的老师们！",
+                    "在此私心也想对所有为爱发电做UwU美化以及答疑解惑的老师们表示感谢！鞠躬——！",
+                ]
+            },
             {
         version: "1.4.0",
         date: "2025-12-12",
@@ -8367,6 +8376,11 @@ border-top: none;
             }
         }
 
+        function showApiError(error) {
+            console.error('API错误:', error);
+            alert('生成日记失败: ' + (error.message || '请检查API设置或网络连接'));
+        }
+
         async function generateJournal(start, end) {
             showToast('正在生成日记，请稍候...');
             isGenerating = true; // Set a flag to prevent other actions
@@ -8427,7 +8441,15 @@ border-top: none;
 
                 const result = await response.json();
                 const rawContent = result.choices[0].message.content;
-                const journalData = JSON.parse(rawContent);
+
+                // 清理内容:移除markdown代码块标记和多余空白
+                let cleanContent = rawContent.trim();
+                // 移除 ```json 和 ``` 标记
+                cleanContent = cleanContent.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+                // 再次trim确保干净
+                cleanContent = cleanContent.trim();
+
+                const journalData = JSON.parse(cleanContent);
 
                 // Create and save the new journal entry
                 const newJournal = {
