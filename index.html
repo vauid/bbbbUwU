@@ -4079,28 +4079,49 @@ border-top: none;
     justify-content: center;
 }
 /* 仅在 iOS Safari (包括添加到主屏幕的 PWA) 中生效 */
+/* 仅在 iOS Safari (包括添加到主屏幕的 PWA) 中生效 */
 @supports (-webkit-touch-callout: none) {
-    
-    /* 1. 强制 body 和 html 使用动态高度，解决白边 */
+    /* 1. 强制 body 和 html 铺满，背景色设为黑色防止底部露白 */
     html, body {
-        height: 100dvh; 
+        height: 100dvh;
+        background-color: #000; /* 或者设为 var(--bg-color) */
     }
 
     /* 2. 确保您的主屏幕容器也是满屏 */
     .phone-screen {
         height: 100dvh;
-        position: fixed; /* 配合 fixed 防止橡皮筋效果露底 */
+        position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
     }
 
-    /* 3. 如果需要，专门针对底部输入框调整 padding */
+    /* 3. 适配底部安全区，给输入框加 padding */
     .message-input-area {
-        /* 这里的 env() 本身就是苹果推出的，但放在这里更安全 */
         padding-bottom: calc(10px + env(safe-area-inset-bottom));
     }
 }
+
+/* --- 调试模式样式 --- */
+.message-bubble.debug-visible {
+    background-color: rgba(238, 238, 238, 0.8) !important; /* 半透明灰色背景 */
+    border: 1px dashed #999 !important; /* 虚线边框 */
+    color: #555 !important;
+    font-family: monospace; /* 等宽字体方便看代码 */
+    font-size: 13px;
+    position: relative;
+    white-space: pre-wrap;
+}
+
+.message-bubble.debug-visible::before {
+    content: '【调试可见】';
+    display: block;
+    font-size: 10px;
+    color: #d32f2f; /* 红色标记 */
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
     </style>
     <style id="global-css-style"></style>
     <style>
@@ -5168,9 +5189,12 @@ border-top: none;
                     <textarea id="message-edit-textarea" rows="6" required></textarea>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <!-- 新增的删除按钮，默认隐藏 -->
+                    <button type="button" id="debug-delete-msg-btn" class="btn btn-danger" style="flex: 1; display: none;">删除</button>
                     <button type="submit" class="btn btn-primary" style="flex: 1;">保存</button>
                     <button type="button" id="cancel-edit-modal-btn" class="btn btn-neutral" style="flex: 1;">取消</button>
                 </div>
+                
             </form>
         </div>
     </div>
@@ -6640,7 +6664,9 @@ border-top: none;
             currentEditingWorldBookId = null, currentStickerActionTarget = null,
             currentJournalDetailId = null,
             currentQuoteInfo = null, // 新增：用于存储引用信息
+            isDebugMode = false;
             currentGroupAction = {type: null, recipients: []};
+            
         let isRawEditMode = false; // 新增：标记是否为调试模式
         let currentPomodoroTask = null, pomodoroInterval = null, pomodoroRemainingSeconds = 0, pomodoroCurrentSessionSeconds = 0, isPomodoroPaused = true, pomodoroPokeCount = 0, pomodoroIsInterrupted = false, currentPomodoroSettingsContext = null, pomodoroSessionHistory = [];
         let isStickerManageMode = false;
@@ -11628,6 +11654,18 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
             getReplyBtn.addEventListener('click', () => getAiReply(currentChatId, currentChatType));
             regenerateBtn.addEventListener('click', handleRegenerate);
             messageArea.addEventListener('click', (e) => {
+                // --- 新增：调试模式下点击任意消息进入编辑 ---
+                if (isDebugMode) {
+                    const messageWrapper = e.target.closest('.message-wrapper');
+                    if (messageWrapper) {
+                        startDebugEdit(messageWrapper.dataset.id);
+                        return; // 阻止后续事件（如播放语音、查看图片）
+                    }
+                }
+                // --- 新增结束 ---
+
+                // ... 原有的代码 ...
+
                 // --- Close any open panels when clicking message area ---
                 if (stickerModal.classList.contains('visible')) {
                     stickerModal.classList.remove('visible');
@@ -11764,7 +11802,15 @@ if (bilingualBubble) {
                 }
             }
 
-            menuItems.push({label: '调试', action: () => startDebugEdit(messageId)});
+            menuItems.push({
+                label: isDebugMode ? '退出调试' : '进入调试',
+                action: () => {
+                    isDebugMode = !isDebugMode;
+                    showToast(isDebugMode ? '已进入调试模式' : '已退出调试模式');
+                    renderMessages(false, true); // 刷新界面以显示/隐藏消息
+                }
+            });
+
             menuItems.push({label: '删除', action: () => enterMultiSelectMode(messageId)});
 
             if (menuItems.length > 0) {
@@ -11775,7 +11821,7 @@ if (bilingualBubble) {
             function startDebugEdit(messageId) {
             exitMultiSelectMode();
             editingMessageId = messageId;
-            isRawEditMode = true; // 标记为调试模式
+            isRawEditMode = true; // 标记为原始内容编辑模式
 
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             const message = chat.history.find(m => m.id === messageId);
@@ -11784,15 +11830,37 @@ if (bilingualBubble) {
             const modal = document.getElementById('message-edit-modal');
             const textarea = document.getElementById('message-edit-textarea');
             const title = modal.querySelector('h3');
+            const deleteBtn = document.getElementById('debug-delete-msg-btn'); // 获取我们新加的删除按钮
 
             // 临时修改标题
             if (!modal.dataset.originalTitle) modal.dataset.originalTitle = title.textContent;
-            title.textContent = "调试消息 (原始内容)";
+            title.textContent = "调试/编辑源码";
 
-            textarea.value = message.content; // 直接显示原始内容，不进行正则提取
+            textarea.value = message.content; // 显示原始内容
+            
+            // 显示并配置删除按钮
+            if (deleteBtn) {
+                deleteBtn.style.display = 'block';
+                // 重新绑定删除事件（克隆节点以移除旧的监听器）
+                const newDeleteBtn = deleteBtn.cloneNode(true);
+                deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+                
+                newDeleteBtn.addEventListener('click', async () => {
+                    if (confirm('【调试模式】确定要永久删除这条消息吗？')) {
+                        chat.history = chat.history.filter(m => m.id !== messageId);
+                        await saveData(); // 持久化保存
+                        renderMessages(false, true); // 刷新界面
+                        cancelMessageEdit(); // 关闭弹窗
+                        showToast('消息已删除');
+                    }
+                });
+            }
+
             modal.classList.add('visible');
             textarea.focus();
         }
+
+
 
         // --- 新增：引用功能相关函数 ---
     function startQuoteReply(messageId) {
@@ -11878,7 +11946,7 @@ if (bilingualBubble) {
 
         async function saveMessageEdit() {
             const newText = document.getElementById('message-edit-textarea').value.trim();
-            // 注意：调试模式下可能允许空值，但为了安全起见，这里还是保留非空检查，或者你可以去掉 !newText 的检查
+            // 注意：调试模式下可能允许空值，但为了安全起见，这里还是保留非空检查
             if (!newText || !editingMessageId) {
                 cancelMessageEdit();
                 return;
@@ -11916,6 +11984,24 @@ if (bilingualBubble) {
                     chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
                 }
             }
+            
+            // --- 新增：检测并更新角色状态 ---
+            if (currentChatType === 'private') {
+                // 检测是否包含状态更新指令，例如 [角色名更新状态为：xxx]
+                const updateStatusRegex = new RegExp(`\\[${chat.realName}更新状态为：(.*?)\\]`);
+                const statusMatch = chat.history[messageIndex].content.match(updateStatusRegex);
+                
+                if (statusMatch) {
+                    chat.status = statusMatch[1]; // 更新数据中的状态
+                    // 如果当前正在该聊天室，立即更新顶栏文字
+                    if (currentChatId === chat.id) {
+                        const statusTextEl = document.getElementById('chat-room-status-text');
+                        if (statusTextEl) statusTextEl.textContent = chat.status;
+                    }
+                }
+            }
+            // --- 新增结束 ---
+
             // --- 核心修改结束 ---
 
             await saveData();
@@ -11927,10 +12013,15 @@ if (bilingualBubble) {
         }
 
 
+
         function cancelMessageEdit() {
             editingMessageId = null;
             isRawEditMode = false; // 重置调试模式标记
             const modal = document.getElementById('message-edit-modal');
+            // --- 新增：隐藏删除按钮 ---
+            const deleteBtn = document.getElementById('debug-delete-msg-btn');
+            if (deleteBtn) deleteBtn.style.display = 'none';
+            // --- 新增结束 ---
             if (modal) {
                 modal.classList.remove('visible');
                 // 恢复原来的标题
@@ -12137,11 +12228,28 @@ if (bilingualBubble) {
             const inviteMatch = content.match(inviteRegex);
             const renameMatch = content.match(renameRegex);
             const invisibleRegex = /\[.*?(?:接收|退回).*?的转账\]|\[.*?更新状态为：.*?\]|\[.*?已接收礼物\]|\[system:.*?\]|\[系统情景通知：.*?\]/;
+            let isDebugHiddenMsg = false;
             if (invisibleRegex.test(content)) {
-                return null;
+                if (!isDebugMode) return null; // 如果不是调试模式，则隐藏
+                isDebugHiddenMsg = true;       // 标记为调试显示的隐藏消息
             }
+
             const wrapper = document.createElement('div');
             wrapper.dataset.id = id;
+                        // --- 新增：渲染调试气泡 ---
+                        if (isDebugHiddenMsg) {
+                wrapper.className = 'message-wrapper received'; // 统一显示在左侧
+                const bubbleRow = document.createElement('div');
+                bubbleRow.className = 'message-bubble-row';
+                const bubble = document.createElement('div');
+                bubble.className = 'message-bubble debug-visible'; // 使用我们定义的CSS类
+                bubble.textContent = content; // 显示原始内容
+                bubbleRow.appendChild(bubble);
+                wrapper.appendChild(bubbleRow);
+                return wrapper;
+            }
+            // --- 新增结束 ---
+
             if (isWithdrawn) {
                 wrapper.className = 'message-wrapper system-notification';
                 const withdrawnText = (role === 'user') ? '你撤回了一条消息' : `${chat.remarkName || chat.name}撤回了一条消息`;
@@ -12367,7 +12475,17 @@ if (bilingualBubble) {
             } else if (message && Array.isArray(message.parts) && message.parts[0].type === 'html') {
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
-                bubbleElement.innerHTML = DOMPurify.sanitize(message.parts[0].text, { ADD_TAGS: ['style'], ADD_ATTR: ['style'] });
+                const htmlContent = message.parts[0].text;
+                // --- 新增：如果是完整 HTML 文档，使用 iframe 渲染 ---
+                if (htmlContent.includes('<!DOCTYPE html>') || htmlContent.includes('<html')) {
+                    // 使用 iframe 隔离渲染，防止样式冲突并允许完整 HTML 显示
+                    // srcdoc 允许直接嵌入 HTML 代码
+                    bubbleElement.innerHTML = `<iframe srcdoc="${htmlContent.replace(/"/g, '&quot;')}" style="width: 100%; min-width: 250px; height: 350px; border: none; background: white; border-radius: 10px;"></iframe>`;
+                    // 注意：iframe 高度固定为 350px，因为很难自动检测内部高度
+                } else {
+                    // 如果只是 HTML 片段（如 <orange>...</orange>），照常渲染
+                    bubbleElement.innerHTML = DOMPurify.sanitize(htmlContent, { ADD_TAGS: ['style'], ADD_ATTR: ['style'] });
+                }
             } else {
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = `message-bubble ${isSent ? 'sent' : 'received'}`;
