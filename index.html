@@ -4078,7 +4078,29 @@ border-top: none;
     align-items: center;
     justify-content: center;
 }
+/* 仅在 iOS Safari (包括添加到主屏幕的 PWA) 中生效 */
+@supports (-webkit-touch-callout: none) {
+    
+    /* 1. 强制 body 和 html 使用动态高度，解决白边 */
+    html, body {
+        height: 100dvh; 
+    }
 
+    /* 2. 确保您的主屏幕容器也是满屏 */
+    .phone-screen {
+        height: 100dvh;
+        position: fixed; /* 配合 fixed 防止橡皮筋效果露底 */
+        top: 0;
+        left: 0;
+        width: 100vw;
+    }
+
+    /* 3. 如果需要，专门针对底部输入框调整 padding */
+    .message-input-area {
+        /* 这里的 env() 本身就是苹果推出的，但放在这里更安全 */
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+}
     </style>
     <style id="global-css-style"></style>
     <style>
@@ -6619,6 +6641,7 @@ border-top: none;
             currentJournalDetailId = null,
             currentQuoteInfo = null, // 新增：用于存储引用信息
             currentGroupAction = {type: null, recipients: []};
+        let isRawEditMode = false; // 新增：标记是否为调试模式
         let currentPomodoroTask = null, pomodoroInterval = null, pomodoroRemainingSeconds = 0, pomodoroCurrentSessionSeconds = 0, isPomodoroPaused = true, pomodoroPokeCount = 0, pomodoroIsInterrupted = false, currentPomodoroSettingsContext = null, pomodoroSessionHistory = [];
         let isStickerManageMode = false;
         let selectedStickerIds = new Set();
@@ -6954,8 +6977,11 @@ border-top: none;
             removeContextMenu();
             const menu = document.createElement('div');
             menu.className = 'context-menu';
-            menu.style.left = `${x}px`;
-            menu.style.top = `${y}px`;
+            
+            // 先添加到 DOM 但设为不可见，以便计算尺寸
+            menu.style.visibility = 'hidden';
+            document.body.appendChild(menu);
+
             items.forEach(item => {
                 const menuItem = document.createElement('div');
                 menuItem.className = 'context-menu-item';
@@ -6967,9 +6993,30 @@ border-top: none;
                 };
                 menu.appendChild(menuItem);
             });
-            document.body.appendChild(menu);
+
+            // --- 核心修改：智能调整位置 ---
+            const rect = menu.getBoundingClientRect();
+            const winWidth = window.innerWidth;
+            const winHeight = window.innerHeight;
+
+            // 如果菜单超出右边界，向左移
+            if (x + rect.width > winWidth) {
+                x = winWidth - rect.width - 10; // 留出10px边距
+            }
+            
+            // 如果菜单超出下边界，向上移（显示在点击位置上方）
+            if (y + rect.height > winHeight) {
+                y = y - rect.height;
+            }
+
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.style.visibility = 'visible'; // 调整完位置后显示
+            // --- 修改结束 ---
+
             document.addEventListener('click', removeContextMenu, {once: true});
         }
+
 
         function removeContextMenu() {
             const menu = document.querySelector('.context-menu');
@@ -11717,11 +11764,34 @@ if (bilingualBubble) {
                 }
             }
 
+            menuItems.push({label: '调试', action: () => startDebugEdit(messageId)});
             menuItems.push({label: '删除', action: () => enterMultiSelectMode(messageId)});
 
             if (menuItems.length > 0) {
                 createContextMenu(menuItems, x, y);
             }
+        }
+            // --- 新增：调试模式编辑函数 ---
+            function startDebugEdit(messageId) {
+            exitMultiSelectMode();
+            editingMessageId = messageId;
+            isRawEditMode = true; // 标记为调试模式
+
+            const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
+            const message = chat.history.find(m => m.id === messageId);
+            if (!message) return;
+
+            const modal = document.getElementById('message-edit-modal');
+            const textarea = document.getElementById('message-edit-textarea');
+            const title = modal.querySelector('h3');
+
+            // 临时修改标题
+            if (!modal.dataset.originalTitle) modal.dataset.originalTitle = title.textContent;
+            title.textContent = "调试消息 (原始内容)";
+
+            textarea.value = message.content; // 直接显示原始内容，不进行正则提取
+            modal.classList.add('visible');
+            textarea.focus();
         }
 
         // --- 新增：引用功能相关函数 ---
@@ -11786,6 +11856,7 @@ if (bilingualBubble) {
         function startMessageEdit(messageId) {
             exitMultiSelectMode();
             editingMessageId = messageId;
+            isRawEditMode = false;
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             const message = chat.history.find(m => m.id === messageId);
             if (!message) return;
@@ -11807,6 +11878,7 @@ if (bilingualBubble) {
 
         async function saveMessageEdit() {
             const newText = document.getElementById('message-edit-textarea').value.trim();
+            // 注意：调试模式下可能允许空值，但为了安全起见，这里还是保留非空检查，或者你可以去掉 !newText 的检查
             if (!newText || !editingMessageId) {
                 cancelMessageEdit();
                 return;
@@ -11819,21 +11891,32 @@ if (bilingualBubble) {
                 return;
             }
 
-            const oldContent = chat.history[messageIndex].content;
-            const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
-            let newContent;
-
-            if (prefixMatch && prefixMatch[1]) {
-                const prefix = prefixMatch[1];
-                newContent = `${prefix}${newText}]`;
+            // --- 核心修改开始 ---
+            if (isRawEditMode) {
+                // 调试模式：直接保存原始内容，不加任何修饰
+                chat.history[messageIndex].content = newText;
+                if (chat.history[messageIndex].parts) {
+                    chat.history[messageIndex].parts = [{type: 'text', text: newText}];
+                }
             } else {
-                newContent = newText;
-            }
+                // 普通模式：保留原有的前缀逻辑
+                const oldContent = chat.history[messageIndex].content;
+                const prefixMatch = oldContent.match(/(\[.*?的消息：)[\s\S]+\]/);
+                let newContent;
 
-            chat.history[messageIndex].content = newContent;
-            if (chat.history[messageIndex].parts) {
-                chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
+                if (prefixMatch && prefixMatch[1]) {
+                    const prefix = prefixMatch[1];
+                    newContent = `${prefix}${newText}]`;
+                } else {
+                    newContent = newText;
+                }
+
+                chat.history[messageIndex].content = newContent;
+                if (chat.history[messageIndex].parts) {
+                    chat.history[messageIndex].parts = [{type: 'text', text: newContent}];
+                }
             }
+            // --- 核心修改结束 ---
 
             await saveData();
             currentPage = 1;
@@ -11843,13 +11926,23 @@ if (bilingualBubble) {
             cancelMessageEdit();
         }
 
+
         function cancelMessageEdit() {
             editingMessageId = null;
+            isRawEditMode = false; // 重置调试模式标记
             const modal = document.getElementById('message-edit-modal');
             if (modal) {
                 modal.classList.remove('visible');
+                // 恢复原来的标题
+                const title = modal.querySelector('h3');
+                if (modal.dataset.originalTitle) {
+                    title.textContent = modal.dataset.originalTitle;
+                } else {
+                    title.textContent = "编辑消息";
+                }
             }
         }
+
 
         function enterMultiSelectMode(initialMessageId) {
             isInMultiSelectMode = true;
