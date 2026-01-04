@@ -12199,7 +12199,7 @@ if (bilingualBubble) {
             const urlRegex = /^(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|bmp|svg)|data:image\/[a-z]+;base64,)/i;
             // 修改：新的表情包匹配正则
             const sentStickerRegex = /\[(?:.+?)发送的表情包：(.+?)\]/i;
-            const receivedStickerRegex = /\[表情包：(.+?)\]/i;
+            const receivedStickerRegex = /\[(?:.*?的)?表情包：(.+?)\]/i;
             
             const voiceRegex = /\[(?:.+?)的语音：([\s\S]+?)\]/;
             const photoVideoRegex = /\[(?:.+?)发来的照片\/视频：([\s\S]+?)\]/;
@@ -13327,7 +13327,7 @@ return `${seconds}秒`;
     d) 语音消息: [${character.realName}的语音：{语音内容}]
     e) 照片/视频: [${character.realName}发来的照片/视频：{描述}]
     f) 给我的转账: [${character.realName}的转账：{金额}元；备注：{备注}]
-    g) 表情包: [表情包：{表情包名称}]
+    g) 表情包: [${character.realName}的表情包：{表情包名称}]
     h) 对我礼物的回应(此条不显示): [${character.realName}已接收礼物]
     i) 对我转账的回应(此条不显示): [${character.realName}接收${character.myName}的转账] 或 [${character.realName}退回${character.myName}的转账]
     j) 更新状态(此条不显示): [${character.realName}更新状态为：{新状态}]
