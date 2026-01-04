@@ -60,12 +60,11 @@
 
         .phone-screen {
             width: 100%;
-            max-width: 420px;
+            max-width: 100%;   /* 改为 100% */
             height: 100%;
-            max-height: 850px;
+            max-height: 100%;  /* 改为 100% */
             background-color: var(--white-color);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border-radius: var(--phone-corner-radius);
+            border-radius: 0;  /* 全屏时去掉圆角更自然 */
             overflow: hidden;
             position: relative;
             display: flex;
@@ -833,7 +832,7 @@
         }
 
         .message-bubble {
-            max-width: 260px;
+            max-width: 75%;
             padding: 8px 12px;
             border-radius: var(--border-radius);
             word-wrap: break-word;
@@ -1433,7 +1432,8 @@
             display: flex;
             align-items: center;
             padding: 10px;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            /* 基础只留2px，加上安全区的高度，这样不会顶得太高 */
+            padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* 仅使用安全区高度，不额外加 10px */
             border-top: 1px solid #eee;
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(10px);
@@ -3916,6 +3916,168 @@ border-top: none;
     width: 24px;  /* 缩小图标宽度 */
     height: 24px; /* 缩小图标高度 */
 }
+/* --- 表情包界面优化样式 --- */
+
+/* 1. 分组导航栏 */
+/* --- 1.4.1 界面精简优化 --- */
+
+/* 新增：顶部导航行容器 (包含分组栏和菜单按钮) */
+.sticker-nav-row {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding-right: 8px; /* 右侧留出一点空隙 */
+    flex-shrink: 0;
+}
+
+/* 修改：分组栏样式 (移除底边框，因为容器有了) */
+#sticker-category-bar {
+    flex-grow: 1; /* 占据剩余空间 */
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 12px 10px; /* 增加一点内边距 */
+    background: transparent;
+    border-bottom: none;
+    gap: 8px;
+    scrollbar-width: none;
+}
+
+/* 修改：菜单按钮样式 (确保它不会被压缩) */
+#sticker-menu-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    margin-left: 5px;
+    color: #666;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+#sticker-menu-btn:active {
+    background-color: #f0f0f0;
+}
+
+/* 隐藏旧的标题栏 (如果HTML没删干净的话) */
+#sticker-modal .header {
+    display: none !important;
+}
+
+
+#sticker-category-bar::-webkit-scrollbar {
+    display: none; /* Chrome/Safari 隐藏滚动条 */
+}
+
+.sticker-category-item {
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 16px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    background-color: #f5f5f5;
+}
+
+.sticker-category-item.active {
+    color: #fff;
+    background-color: var(--primary-color);
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(255, 128, 171, 0.3);
+}
+
+/* 2. 调整表情包弹窗布局 */
+#sticker-modal {
+    background: #fff; /* 纯白背景更干净 */
+    height: 45% !important; /* 稍微增高一点 */
+    max-height: 400px !important;
+}
+
+#sticker-modal .header {
+    background: #fff;
+    border-bottom: none; /* 去掉原来的线，由分组栏接管 */
+    padding: 12px 15px;
+}
+
+#sticker-modal .header span {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* 3. 优化网格显示 */
+.sticker-grid {
+    padding: 12px;
+    gap: 12px;
+    align-content: flex-start; /* 防止内容少时分散 */
+}
+
+.sticker-item img {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px; /* 给表情加一点圆角 */
+    transition: transform 0.1s;
+}
+
+.sticker-item:active img {
+    transform: scale(0.95);
+}
+
+/* 4. 管理模式下的样式 */
+.sticker-item.is-managing {
+    opacity: 1;
+}
+
+.sticker-item.is-managing img {
+    opacity: 0.8;
+}
+
+/* 选中状态的勾选标记优化 */
+.sticker-item.is-selected::after {
+    top: -5px;
+    right: -5px;
+    width: 22px;
+    height: 22px;
+    font-size: 14px;
+    border: 2px solid #fff; /* 增加白边，更清晰 */
+}
+
+/* 未选中状态的圆圈优化 */
+.sticker-item.is-managing:not(.is-selected)::before {
+    top: -5px;
+    right: -5px;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #ddd;
+    background-color: #fff;
+}
+
+/* 5. 底部管理栏样式 */
+#sticker-manage-bar {
+    padding: 10px 15px !important;
+    background: #fff !important;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    display: none; /* 默认隐藏 */
+    flex-shrink: 0;
+}
+
+.manage-bar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 6. 菜单按钮样式 */
+.icon-btn-simple {
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
     </style>
     <style id="global-css-style"></style>
@@ -4836,27 +4998,75 @@ border-top: none;
             <button class="btn btn-danger" id="delete-selected-btn" style="width: auto; padding: 8px 16px;">删除已选
             </button>
         </div>
-        <div id="sticker-modal">
-            <div class="header">
-                <span>我的表情</span>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-neutral btn-small" id="manage-stickers-btn">管理</button>
-                    <button class="btn btn-primary btn-small" id="batch-add-sticker-btn" style="background-color: var(--accent-color);">批量导入</button>
-                    <button class="btn btn-primary btn-small" id="add-new-sticker-btn">添加新表情</button>
-                </div>
+                        <!-- 表情包主弹窗 -->
+                        <div id="sticker-modal">
+                            <!-- 顶部导航行：左侧是分组，右侧是菜单按钮 -->
+                            <div class="sticker-nav-row">
+                                <div id="sticker-category-bar">
+                                    <!-- JS 动态生成分组 -->
+                                </div>
+                                <button class="icon-btn-simple" id="sticker-menu-btn">
+                                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>
+                                </button>
+                            </div>
+                    
+                            <!-- 表情列表容器 -->
+                            <div class="sticker-grid" id="sticker-grid-container"></div>
+                    
+                                                        <!-- 底部管理栏 (仅在多选模式显示) -->
+                                                        <div id="sticker-manage-bar">
+                                                            <div class="manage-bar-content">
+                                                                <div style="display: flex; align-items: center; gap: 10px;">
+                                                                    <!-- 新增：全选按钮 -->
+                                                                    <button class="btn btn-neutral btn-small" id="select-all-stickers-btn" style="padding: 4px 8px; font-size: 12px;">全选</button>
+                                                                    <span id="sticker-select-count" style="font-size: 14px; color: #666;">已选 0 项</span>
+                                                                </div>
+                                                                <div style="display: flex; gap: 10px;">
+                                                                    <button class="btn btn-neutral btn-small" id="move-sticker-group-btn">移动分组</button>
+                                                                    <button class="btn btn-danger btn-small" id="delete-selected-stickers-btn">删除</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                            
+                        </div>
+                </div> <!-- 这里是 chat-room-screen 的结束标签 -->
+            
+
+    <!-- 新增：管理菜单 (点击右上角菜单键出现) -->
+    <div id="sticker-menu-actionsheet" class="action-sheet-overlay">
+        <div class="action-sheet">
+            <button class="action-sheet-button" id="menu-multi-select-btn">多选管理</button>
+            <button class="action-sheet-button" id="menu-batch-import-btn">批量导入</button>
+            <button class="action-sheet-button" id="menu-add-new-btn">添加新表情</button>
+            <button class="action-sheet-button danger" id="menu-cancel-btn">取消</button>
+        </div>
+    </div>
+
+    <!-- 新增：移动分组弹窗 -->
+    <div id="move-sticker-modal" class="modal-overlay">
+        <div class="modal-window">
+            <h3>移动到分组</h3>
+            <div class="form-group">
+                <label>选择或输入新分组名称</label>
+                <input type="text" id="move-target-group-input" placeholder="例如：猫猫图" list="existing-groups-list">
+                <datalist id="existing-groups-list">
+                    <!-- JS 自动填充现有分组 -->
+                </datalist>
             </div>
-            <div class="sticker-grid" id="sticker-grid-container"></div>
-            <div id="sticker-manage-bar" style="display: none; padding: 10px; border-top: 1px solid #eee; background: #f7f7f7;">
-                <button class="btn btn-danger" id="delete-selected-stickers-btn" style="width: 100%;">删除已选 (0)</button>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="confirm-move-sticker-btn" class="btn btn-primary" style="flex: 1;">确认移动</button>
+                <button id="cancel-move-sticker-btn" class="btn btn-neutral" style="flex: 1;">取消</button>
             </div>
         </div>
+    </div>
+
         <!-- NEW: Chat Expansion Panel -->
         <div id="chat-expansion-panel">
             <div class="sticker-grid" id="chat-expansion-grid">
                 <!-- Items will be populated by JS -->
             </div>
         </div>
-    </div>
+
     <div id="world-book-screen" class="screen">
         <header class="app-header">
             <button class="back-btn" data-target="home-screen">‹</button>
@@ -4968,9 +5178,10 @@ border-top: none;
             <h3 id="add-sticker-modal-title">添加新表情</h3>
             <form id="add-sticker-form"><input type="hidden" id="sticker-edit-id">
                 <div id="sticker-preview"><span>预览</span></div>
-                <div class="form-group"><label for="sticker-name">表情名称</label><input type="text" id="sticker-name"
-                                                                                         placeholder="如：开心" required>
-                </div>
+                <div class="form-group"><label for="sticker-name">表情名称</label><input type="text" id="sticker-name" placeholder="如：开心" required></div>
+                <div class="form-group"><label for="sticker-group">分组名称</label><input type="text" id="sticker-group" placeholder="如：猫猫组 (选填)"></div>
+
+               
                 <div class="form-group"><label for="sticker-url-input">表情URL</label><input type="url"
                                                                                              id="sticker-url-input"
                                                                                              placeholder="粘贴图片URL">
@@ -4995,6 +5206,10 @@ border-top: none;
         <div class="modal-window">
             <h3>批量导入表情</h3>
             <form id="batch-add-sticker-form">
+                <div class="form-group">
+                    <label for="batch-sticker-group">分组名称 (本批次所有表情将归入此组)</label>
+                    <input type="text" id="batch-sticker-group" placeholder="如：通用组">
+                </div>
                 <div class="form-group">
                     <label for="sticker-urls-textarea">数据格式：名称:URL (英文冒号，每行一个)</label>
                     <textarea id="sticker-urls-textarea" rows="8" placeholder="例如：&#10;开心:https://example.com/happy.gif&#10;哭泣:https://example.com/cry.png"></textarea>
@@ -5104,7 +5319,15 @@ border-top: none;
                                                                                                        id="setting-char-remark">
                 </div>
                 <div class="form-group"><label for="setting-char-persona">角色人设</label><textarea
-                        id="setting-char-persona" placeholder="详细描述角色的性格、背景、说话风格等。"></textarea></div>
+                    id="setting-char-persona" placeholder="详细描述角色的性格、背景、说话风格等。"></textarea></div>
+                    <div class="form-group">
+                        <label>可用表情包分组</label>
+                        <div id="setting-char-sticker-groups-container" style="max-height: 150px; overflow-y: auto; border: 2px solid #fce4ec; padding: 10px; border-radius: 10px; background: #fff;">
+                            <!-- JS会自动在这里生成复选框 -->
+                            <span style="color:#999; font-size:12px;">暂无分组，请先在表情包管理中添加</span>
+                        </div>
+                    </div>
+                    
                 <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;">
                 <div class="avatar-setting"><img src="" alt="我的头像" id="setting-my-avatar-preview"
                                                  class="avatar-preview"><input type="file" id="setting-my-avatar-upload"
@@ -5429,8 +5652,15 @@ border-top: none;
             <div class="title-container">
                 <h1 class="title">Ta的手机</h1>
             </div>
-            <button class="action-btn" id="peek-settings-btn"><img src="https://i.postimg.cc/nhwP4pQy/chan-73.png" alt="设置"></button>
+            <div class="action-btn-group">
+                <!-- 新增：清空数据按钮 -->
+                <button class="action-btn" id="clear-peek-data-btn" title="清空所有偷看数据">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+                <button class="action-btn" id="peek-settings-btn"><img src="https://i.postimg.cc/nhwP4pQy/chan-73.png" alt="设置"></button>
+            </div>
         </header>
+
         <main class="content" style="padding: 50px 0; justify-content: flex-start; align-items: center;">
             <!-- Content rendered by renderPeekScreen() -->
         </main>
@@ -5957,6 +6187,20 @@ border-top: none;
         </div>
     </div>
     <style>
+        /* --- 新增：表情包分组标题样式 --- */
+.sticker-group-header {
+    grid-column: 1 / -1; /* 让标题横跨所有列 */
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-top: 10px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+
         /* --- Update Log Modal Styles --- */
         #update-log-modal .modal-window {
             max-width: 380px;
@@ -6003,6 +6247,7 @@ border-top: none;
             top: 2px;
             color: var(--accent-color);
         }
+
     </style>
 
 <script>
@@ -6257,8 +6502,21 @@ border-top: none;
             'apiPresets', 'bubbleCssPresets', 'myPersonaPresets', 'globalCss',
             'globalCssPresets', 'homeSignature', 'forumPosts', 'forumBindings', 'pomodoroTasks', 'pomodoroSettings', 'insWidgetSettings', 'homeWidgetSettings'
         ];
-        const appVersion = "1.5.0"; // Current app version
+        const appVersion = "1.6.0"; // Current app version
         const updateLog = [
+            {
+                version: "1.6.0",
+                date: "2025-01-04",
+                notes: [
+                    "本次更新：更迭了表情包的机制，过往的机制因比较占token弃用，所以以前聊天记录的不再渲染。",
+                    "批量导入时使用英文/中文的冒号都可以了。",
+                    "现在的表情包如何使用？批量导入时填写分组名称，一定要填！未分类的表情包不能被char使用（包括你以前的表情包都属于未分类）；然后在侧边栏给char选择他可以使用的表情包分组即可。",
+                    "以前的表情包统一归类到未分类里，想给char使用时一定要多选时→转移分组→自己分一下类。",
+                    "偷看手机的数据现在不会退出即清空了，想生成下一次之前点击右上角的删除一键清空即可。",
+                    "有任何报错请首先在dc小手机区标注内搜索uwu，有自助答疑清单，不要就基础问题消耗无偿答疑老师们的热情，亲亲你们！",
+                    "过往更新说明 及 功能使用说明 重复观看指路→主屏幕的教程app→更新说明！新手宝宝一定要看哦。",
+                ]
+            },
             {
                 version: "1.5.0",
                 date: "2025-12-17",
@@ -6366,9 +6624,9 @@ border-top: none;
         let selectedStickerIds = new Set();
         let isWorldBookMultiSelectMode = false;
         let selectedWorldBookIds = new Set();
-        let peekContentCache = {};
         let generatingPeekApps = new Set(); // Tracks which apps are currently generating content
         let selectedMessageIds = new Set();
+        let currentStickerCategory = 'recent'; // 默认显示最近使用
         const MESSAGES_PER_PAGE = 50;
 
         // --- DOM Element Cache ---
@@ -6597,6 +6855,7 @@ border-top: none;
 
             // Data integrity checks (can be kept)
             db.characters.forEach(c => {
+                if (!c.peekData) c.peekData = {}; // 初始化偷看数据存储
                 if (c.isPinned === undefined) c.isPinned = false;
                 if (c.status === undefined) c.status = '在线';
                 if (!c.worldBookIds) c.worldBookIds = [];
@@ -8490,6 +8749,19 @@ border-top: none;
             const peekWallpaperUpload = document.getElementById('peek-wallpaper-upload');
             const peekWallpaperPreview = document.getElementById('peek-wallpaper-preview');
 
+                        // 新增：清空偷看数据按钮事件
+            document.getElementById('clear-peek-data-btn')?.addEventListener('click', async () => {
+                if (confirm('确定要清空该角色的所有偷看数据吗？清空后下次进入各应用将重新生成。')) {
+                    const char = db.characters.find(c => c.id === currentChatId);
+                    if (char) {
+                        char.peekData = {}; // 清空数据对象
+                        await saveData();   // 保存更改
+                        showToast('偷看数据已清空');
+                    }
+                }
+            });
+
+
             peekBtn?.addEventListener('click', () => {
                 peekConfirmModal.classList.add('visible');
             });
@@ -8500,7 +8772,6 @@ border-top: none;
 
             peekConfirmYes?.addEventListener('click', () => {
                 peekConfirmModal.classList.remove('visible');
-                peekContentCache = {}; // Clear cache for new session
                 renderPeekScreen(); // Render before switching
                 switchScreen('peek-screen');
             });
@@ -8578,7 +8849,8 @@ border-top: none;
                 const chatItem = e.target.closest('.chat-item');
                 if (chatItem) {
                     const partnerName = chatItem.dataset.name;
-                    const cachedData = peekContentCache.messages;
+                    const char = db.characters.find(c => c.id === currentChatId);
+                    const cachedData = char ? char.peekData.messages : null;
                     if (cachedData && cachedData.conversations) {
                         const conversation = cachedData.conversations.find(c => c.partnerName === partnerName);
                         if (conversation) {
@@ -8917,8 +9189,10 @@ border-top: none;
 
             screen.querySelectorAll('.memo-item').forEach(item => {
                 item.addEventListener('click', () => {
-                    // FIX: Correctly access the 'memos' array within the cached object.
-                    const memo = peekContentCache.memos?.memos?.find(m => m.id === item.dataset.id);
+            // 【修复】从传入的 memos 参数直接查找，或者从 db 查找
+            // 最简单的方法是直接用 memos 参数（因为渲染时已经传进来了）
+                    const memo = memos.find(m => m.id === item.dataset.id); 
+            
                     if (memo) {
                         renderMemoDetail(memo);
                         switchScreen('peek-memo-detail-screen');
@@ -9722,6 +9996,7 @@ border-top: none;
 
             // 数据映射：将导入卡片的字段映射到本应用的字段
             const newChar = {
+                peekData: {}, // 新增：用于持久化存储偷看数据
                 id: `char_${Date.now()}`,
                 realName: charData.name || '未命名',
                 remarkName: charData.name || '未命名',
@@ -11247,6 +11522,7 @@ ${unreadBadgeHTML}`; /* <-- 将红点元素移动到这里 */
             addCharForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const newChar = {
+                    peekData: {}, // 新增
                     id: `char_${Date.now()}`,
                     realName: document.getElementById('char-real-name').value,
                     remarkName: document.getElementById('char-remark-name').value,
@@ -11707,17 +11983,15 @@ if (bilingualBubble) {
         function createMessageBubbleElement(message) {
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             const {role, content, timestamp, id, transferStatus, giftStatus, stickerData, senderId, quote, isWithdrawn, originalContent} = message;
-    // --- 新增：双语模式判断逻辑 ---
+            // --- 双语模式判断逻辑 ---
             const isBilingualMode = chat.bilingualModeEnabled;
             let bilingualMatch = null;
             if (isBilingualMode && role === 'assistant') {
                 const contentMatch = content.match(/^\[.*?的消息：([\s\S]+)\]$/);
                 if (contentMatch) {
                     const mainText = contentMatch[1].trim();
-                    // 从后往前找到最后一个右括号
                     const lastCloseParen = Math.max(mainText.lastIndexOf(')'), mainText.lastIndexOf('）'));
                     if (lastCloseParen > -1) {
-                        // 从右括号的位置往前找对应的左括号
                         const lastOpenParen = Math.max(
                             mainText.lastIndexOf('(', lastCloseParen),
                             mainText.lastIndexOf('（', lastCloseParen)
@@ -11725,7 +11999,6 @@ if (bilingualBubble) {
                         if (lastOpenParen > -1) {
                             const chineseText = mainText.substring(lastOpenParen + 1, lastCloseParen).trim();
                             const foreignText = mainText.substring(0, lastOpenParen).trim();
-                            // 确保原文和译文都不是空的
                             if (foreignText && chineseText) {
                                 bilingualMatch = [null, foreignText, chineseText];
                             }
@@ -11734,20 +12007,16 @@ if (bilingualBubble) {
                 }
             }
 
-
             if (bilingualMatch) {
                 const foreignText = bilingualMatch[1].trim();
                 const chineseText = bilingualMatch[2].trim();
                 const wrapper = document.createElement('div');
                 wrapper.dataset.id = id;
-                wrapper.className = 'message-wrapper received'; // 双语消息总是接收的
-
+                wrapper.className = 'message-wrapper received';
                 const bubbleRow = document.createElement('div');
                 bubbleRow.className = 'message-bubble-row';
-
                 const avatarUrl = chat.avatar;
                 const timeString = `${pad(new Date(timestamp).getHours())}:${pad(new Date(timestamp).getMinutes())}`;
-
                 const bubbleElement = document.createElement('div');
                 bubbleElement.className = 'message-bubble received bilingual-bubble';
                 bubbleElement.innerHTML = `<span>${DOMPurify.sanitize(foreignText)}</span>`;
@@ -11758,21 +12027,16 @@ if (bilingualBubble) {
                     bubbleElement.style.backgroundColor = bubbleTheme.bg;
                     bubbleElement.style.color = bubbleTheme.text;
                 }
-
-        
                 const translationDiv = document.createElement('div');
                 translationDiv.className = 'translation-text';
                 translationDiv.textContent = chineseText;
-
                 bubbleRow.innerHTML = `<div class="message-info"><img src="${avatarUrl}" class="message-avatar"><span class="message-time">${timeString}</span></div>`;
                 bubbleRow.appendChild(bubbleElement);
                 wrapper.appendChild(bubbleRow);
                 wrapper.appendChild(translationDiv);
                 return wrapper;
             }
-            // --- 双语模式逻辑结束 ---
 
-            // 如果不是双语模式，则执行旧的逻辑（这里是您原来的代码，我直接复制过来）
             const timeSkipRegex = /\[system-display:([\s\S]+?)\]/;
             const inviteRegex = /\[(.*?)邀请(.*?)加入了群聊\]/;
             const renameRegex = /\[(.*?)修改群名为：(.*?)\]/;
@@ -11840,8 +12104,10 @@ if (bilingualBubble) {
             bubbleRow.className = 'message-bubble-row';
             let bubbleElement;
             const urlRegex = /^(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|bmp|svg)|data:image\/[a-z]+;base64,)/i;
-            const sentStickerRegex = /\[(?:.+?)的表情包：.+?\]/i;
-            const receivedStickerRegex = /\[(?:.+?)发送的表情包：([\s\S]+?)\]/i;
+            // 修改：新的表情包匹配正则
+            const sentStickerRegex = /\[(?:.+?)发送的表情包：(.+?)\]/i;
+            const receivedStickerRegex = /\[表情包：(.+?)\]/i;
+            
             const voiceRegex = /\[(?:.+?)的语音：([\s\S]+?)\]/;
             const photoVideoRegex = /\[(?:.+?)发来的照片\/视频：([\s\S]+?)\]/;
             const privateSentTransferRegex = /\[.*?给你转账：([\d.]+)元；备注：(.*?)\]/;
@@ -11864,6 +12130,7 @@ if (bilingualBubble) {
             const groupGiftMatch = content.match(groupGiftRegex);
             const imageRecogMatch = content.match(imageRecogRegex);
             const textMatch = content.match(textRegex);
+            
             if (pomodoroMatch) {
                 const taskName = pomodoroMatch[1];
                 const duration = pomodoroMatch[2];
@@ -11879,37 +12146,38 @@ if (bilingualBubble) {
                 bubbleElement.addEventListener('click', () => {
                     detailsDiv.classList.toggle('active');
                 });
-            } else if ((isSent && sentStickerMatch && stickerData) || (!isSent && receivedStickerMatch)) {
+            } else if ((isSent && sentStickerMatch) || (!isSent && receivedStickerMatch)) {
                 bubbleElement = document.createElement('div');
                 bubbleElement.className = 'image-bubble';
                 let stickerSrc = '';
-                if (isSent) {
+                
+                if (isSent && stickerData) {
+                    // 如果是自己发的，且有本地缓存数据，直接使用
                     stickerSrc = stickerData;
                 } else {
-                    let useCatbox = false;
-                    if (chat && chat.worldBookIds && chat.worldBookIds.length > 0) {
-                        const worldBookContent = chat.worldBookIds.map(id => db.worldBooks.find(wb => wb.id === id)).filter(Boolean).map(wb => wb.content).join(' ');
-                        if (worldBookContent.toLowerCase().includes('catbox')) {
-                            useCatbox = true;
-                        }
+                    // 如果是对方发的，或者自己发的但没有缓存，则去数据库查找
+                    const stickerName = isSent ? sentStickerMatch[1].trim() : receivedStickerMatch[1].trim();
+                    
+                    // 1. 获取当前角色绑定的分组
+                    const groups = (chat.stickerGroups || '').split(/[,，]/).map(s => s.trim()).filter(Boolean);
+                    
+                    // 2. 优先在绑定分组里找
+                    let targetSticker = null;
+                    if (groups.length > 0) {
+                        targetSticker = db.myStickers.find(s => groups.includes(s.group) && s.name === stickerName);
                     }
-                    const imageHost = useCatbox ? 'https://files.catbox.moe/' : 'https://i.postimg.cc/';
-                    const rawPath = receivedStickerMatch[1].trim();
-                    let finalPath;
-                    if (useCatbox) {
-                        const catboxFileRegex = /[a-z0-9]+\.(jpeg|png|gif|jpg)$/i;
-                        const pathMatch = rawPath.match(catboxFileRegex);
-                        if (pathMatch) {
-                            finalPath = pathMatch[0];
-                        } else {
-                            finalPath = rawPath;
-                        }
+                    
+                    // 3. 如果没找到（或者没绑定分组），则全局查找（兼容旧数据或未分组数据）
+                    if (!targetSticker) {
+                        targetSticker = db.myStickers.find(s => s.name === stickerName);
+                    }
+                    
+                    if (targetSticker) {
+                        stickerSrc = targetSticker.data;
                     } else {
-                        const pathExtractionRegex = /[a-zA-Z0-9]+\/.*$/;
-                        const extractedPathMatch = rawPath.match(pathExtractionRegex);
-                        finalPath = extractedPathMatch ? extractedPathMatch[0] : rawPath;
+                        // 找不到图片，显示裂图或提示
+                        stickerSrc = 'https://i.postimg.cc/Y96LPskq/o-o-2.jpg'; // 这里的占位图可以换成一个“图片丢失”的图标
                     }
-                    stickerSrc = `${imageHost}${finalPath}`;
                 }
                 bubbleElement.innerHTML = `<img src="${stickerSrc}" alt="表情包">`;
             } else if (privateGiftMatch || groupGiftMatch) {
@@ -12032,7 +12300,7 @@ if (bilingualBubble) {
                     } else {
                         if (currentChatType === 'private') {
                             quotedSenderName = chat.remarkName;
-                       } else {
+                        } else {
                             const sender = chat.members.find(m => m.id === quote.senderId);
                             quotedSenderName = sender ? sender.groupNickname : '未知成员';
                         }
@@ -12048,6 +12316,7 @@ if (bilingualBubble) {
             wrapper.prepend(bubbleRow);
             return wrapper;
         }
+
 
 
         async function addMessageBubble(message, targetChatId, targetChatType) {
@@ -12369,26 +12638,39 @@ return `${seconds}秒`;
         }
 
         async function sendSticker(sticker) {
+            // 1. 更新最近使用时间
+            const dbSticker = db.myStickers.find(s => s.id === sticker.id);
+            if (dbSticker) {
+                dbSticker.lastUsedTime = Date.now();
+                // 不立即 await saveData，为了流畅性，让它在后台存，或者在发送消息后一起存
+            }
+
             const chat = (currentChatType === 'private') ? db.characters.find(c => c.id === currentChatId) : db.groups.find(g => g.id === currentChatId);
             const myName = (currentChatType === 'private') ? chat.myName : chat.me.nickname;
-            const messageContentForAI = `[${myName}的表情包：${sticker.name}]`;
+            
+            const messageContentForAI = `[${myName}发送的表情包：${sticker.name}]`;
             const message = {
                 id: `msg_${Date.now()}`,
                 role: 'user',
                 content: messageContentForAI,
                 parts: [{type: 'text', text: messageContentForAI}],
                 timestamp: Date.now(),
-                stickerData: sticker.data
+                stickerData: sticker.data 
             };
             if (currentChatType === 'group') {
                 message.senderId = 'user_me';
             }
             chat.history.push(message);
             addMessageBubble(message, currentChatId, currentChatType);
-            await saveData();
+            
+            await saveData(); // 这里会一起保存表情包的时间更新
             renderChatList();
-            stickerModal.classList.remove('visible');
+            
+            // 关闭弹窗
+            document.getElementById('sticker-modal').classList.remove('visible');
         }
+
+
 
         async function sendMyVoiceMessage(text) {
             if (!text) return;
@@ -12909,7 +13191,7 @@ return `${seconds}秒`;
                 prompt += `3. 关于我的人设：${character.myPersona}\n`;
             }
             prompt += `4. 我的消息中可能会出现特殊格式，请根据其内容和你的角色设定进行回应：
-    - [${character.myName}的表情包：xxx]：我给你发送了一个名为xxx的表情包。你只需要根据表情包的名字理解我的情绪或意图并回应，不需要真的发送图片。
+    - [${character.myName}发送的表情包：xxx]：我给你发送了一个名为xxx的表情包。你只需要根据表情包的名字理解我的情绪或意图并回应，不需要真的发送图片。
     - [${character.myName}发来了一张图片：]：我给你发送了一张图片，你需要对图片内容做出回应。
     - [${character.myName}送来的礼物：xxx]：我给你送了一个礼物，xxx是礼物的描述。
     - [${character.myName}的语音：xxx]：我给你发送了一段内容为xxx的语音。
@@ -12928,7 +13210,22 @@ return `${seconds}秒`;
 10. ✨重要✨ 你可以选择我的单独一条消息引用，当你想要针对某句话做出单独回应时，格式为：[${character.realName}引用“{我的某条消息内容}”并回复：{回复内容}]。
 11. 你的所有回复都必须直接是聊天内容，绝对不允许包含任何如[心理活动]、(动作)、*环境描写*等多余的、在括号或星号里的叙述性文本。
 `;
-            prompt += `12. 你拥有发送表情包的能力。这是一个可选功能，你可以根据对话氛围和内容，自行判断是否需要发送表情包来辅助表达。你不必在每次回复中都包含表情包。格式为：[${character.realName}发送的表情包：图片URL]。\n`;
+            // --- 新增：动态注入表情包名称 ---
+            const groups = (character.stickerGroups || '').split(/[,，]/).map(s => s.trim()).filter(Boolean);
+            let stickerInstruction = '';
+            if (groups.length > 0) {
+                const availableStickers = db.myStickers.filter(s => groups.includes(s.group));
+                if (availableStickers.length > 0) {
+                    const stickerNames = availableStickers.map(s => s.name).join(', ');
+                    stickerInstruction = `12. 你拥有发送表情包的能力。你可以使用以下表情包来表达情绪：[${stickerNames}]。请使用格式：[表情包：名称]。例如：[表情包：开心]。\n`;
+                } else {
+                    stickerInstruction = `12. 你拥有发送表情包的能力。格式为：[表情包：名称]。\n`;
+                }
+            } else {
+                // 兼容旧逻辑：如果没有分组，则不限制（或者你可以选择不注入名称，只给格式）
+                stickerInstruction = `12. 你拥有发送表情包的能力。格式为：[表情包：名称]。\n`;
+            }
+            prompt += stickerInstruction;
             
             let outputFormats = `
     a) 普通消息: [${character.realName}的消息：{消息内容}]
@@ -12937,7 +13234,7 @@ return `${seconds}秒`;
     d) 语音消息: [${character.realName}的语音：{语音内容}]
     e) 照片/视频: [${character.realName}发来的照片/视频：{描述}]
     f) 给我的转账: [${character.realName}的转账：{金额}元；备注：{备注}]
-    g) 表情包/图片: [${character.realName}发送的表情包：{表情包路径}]。注意：这里的路径不需要包含"https://i.postimg.cc/"，只需要提供后面的部分，例如 "害羞vHLfrV3K/1.jpg"。
+    g) 表情包: [表情包：{表情包名称}]
     h) 对我礼物的回应(此条不显示): [${character.realName}已接收礼物]
     i) 对我转账的回应(此条不显示): [${character.realName}接收${character.myName}的转账] 或 [${character.realName}退回${character.myName}的转账]
     j) 更新状态(此条不显示): [${character.realName}更新状态为：{新状态}]
@@ -12946,7 +13243,7 @@ return `${seconds}秒`;
 
            const allWorldBookContent = worldBooksBefore + '\n' + worldBooksAfter;
            if (allWorldBookContent.includes('<orange>')) {
-               outputFormats += `\n     l) HTML模块: {HTML内容}。这是一种特殊的、用于展示丰富样式的小卡片消息，格式必须为纯HTML+行内CSS，你可以用它来创造更有趣的互动。`;
+               outputFormats += `\n     m) HTML模块: {HTML内容}。这是一种特殊的、用于展示丰富样式的小卡片消息，格式必须为纯HTML+行内CSS，你可以用它来创造更有趣的互动。`;
            }
 
             prompt += `13. 你的输出格式必须严格遵循以下格式：${outputFormats}\n`;
@@ -12959,6 +13256,7 @@ return `${seconds}秒`;
 
             return prompt;
 }
+
 
         function generateGroupSystemPrompt(group) {
             const worldBooksBefore = (group.worldBookIds || []).map(id => db.worldBooks.find(wb => wb.id === id && wb.position === 'before')).filter(Boolean).map(wb => wb.content).join('\n');
@@ -13393,123 +13691,102 @@ return `${seconds}秒`;
         }
 
         async function setupStickerSystem() {
-            const batchAddStickerBtn = document.getElementById('batch-add-sticker-btn');
+            // 核心按钮
+            const stickerMenuBtn = document.getElementById('sticker-menu-btn');
+            const stickerMenuActionSheet = document.getElementById('sticker-menu-actionsheet');
+            const stickerCategoryBar = document.getElementById('sticker-category-bar');
+            
+            // 菜单项按钮
+            const menuMultiSelectBtn = document.getElementById('menu-multi-select-btn');
+            const menuBatchImportBtn = document.getElementById('menu-batch-import-btn');
+            const menuAddNewBtn = document.getElementById('menu-add-new-btn');
+            const menuCancelBtn = document.getElementById('menu-cancel-btn');
+
+            // 管理栏按钮
+            const deleteSelectedStickersBtn = document.getElementById('delete-selected-stickers-btn');
+            const moveStickerGroupBtn = document.getElementById('move-sticker-group-btn');
+            const stickerManageBar = document.getElementById('sticker-manage-bar');
+            const selectAllStickersBtn = document.getElementById('select-all-stickers-btn');
+
+            // 移动分组弹窗
+            const moveStickerModal = document.getElementById('move-sticker-modal');
+            const moveTargetGroupInput = document.getElementById('move-target-group-input');
+            const confirmMoveStickerBtn = document.getElementById('confirm-move-sticker-btn');
+            const cancelMoveStickerBtn = document.getElementById('cancel-move-sticker-btn');
+            const existingGroupsList = document.getElementById('existing-groups-list');
+
+            // 原有的添加/批量弹窗元素
             const batchAddStickerModal = document.getElementById('batch-add-sticker-modal');
             const batchAddStickerForm = document.getElementById('batch-add-sticker-form');
             const stickerUrlsTextarea = document.getElementById('sticker-urls-textarea');
-            const manageStickersBtn = document.getElementById('manage-stickers-btn');
-            const stickerManageBar = document.getElementById('sticker-manage-bar');
-            const deleteSelectedStickersBtn = document.getElementById('delete-selected-stickers-btn');
+            const batchStickerGroupInput = document.getElementById('batch-sticker-group');
+            const addStickerModal = document.getElementById('add-sticker-modal');
+            const addStickerForm = document.getElementById('add-sticker-form');
+            const stickerNameInput = document.getElementById('sticker-name');
+            const stickerGroupInput = document.getElementById('sticker-group');
+            const stickerEditIdInput = document.getElementById('sticker-edit-id');
+            const stickerPreview = document.getElementById('sticker-preview');
+            const stickerUrlInput = document.getElementById('sticker-url-input');
+            const stickerFileUpload = document.getElementById('sticker-file-upload');
+            const addStickerModalTitle = document.getElementById('add-sticker-modal-title');
 
-            manageStickersBtn.addEventListener('click', () => {
-                isStickerManageMode = !isStickerManageMode;
+            // --- 1. 菜单交互 ---
+            stickerMenuBtn.addEventListener('click', () => {
                 if (isStickerManageMode) {
-                    manageStickersBtn.textContent = '取消';
-                    manageStickersBtn.classList.remove('btn-neutral');
-                    manageStickersBtn.classList.add('btn-primary');
-                    stickerManageBar.style.display = 'block';
-                    stickerActionSheet.classList.remove('visible'); // 如果操作菜单是开的，则关掉
+                    // 如果正在管理模式，点击按钮退出管理模式
+                    exitStickerManageMode();
                 } else {
-                    manageStickersBtn.textContent = '管理';
-                    manageStickersBtn.classList.remove('btn-primary');
-                    manageStickersBtn.classList.add('btn-neutral');
-                    stickerManageBar.style.display = 'none';
-                    selectedStickerIds.clear();
-                }
-                updateDeleteSelectedBtn();
-                renderStickerGrid();
-            });
-
-            deleteSelectedStickersBtn.addEventListener('click', async () => {
-                if (selectedStickerIds.size === 0) {
-                    showToast('请先选择要删除的表情');
-                    return;
-                }
-                if (confirm(`确定要删除这 ${selectedStickerIds.size} 个表情吗？`)) {
-                    db.myStickers = db.myStickers.filter(s => !selectedStickerIds.has(s.id));
-                    await saveData();
-                    showToast('表情已删除');
-                    // 退出管理模式
-                    isStickerManageMode = false;
-                    manageStickersBtn.textContent = '管理';
-                    manageStickersBtn.classList.remove('btn-primary');
-                    manageStickersBtn.classList.add('btn-neutral');
-                    stickerManageBar.style.display = 'none';
-                    selectedStickerIds.clear();
-                    renderStickerGrid();
+                    stickerMenuActionSheet.classList.add('visible');
                 }
             });
 
-            function updateDeleteSelectedBtn() {
-                deleteSelectedStickersBtn.textContent = `删除已选 (${selectedStickerIds.size})`;
-                deleteSelectedStickersBtn.disabled = selectedStickerIds.size === 0;
+            menuCancelBtn.addEventListener('click', () => stickerMenuActionSheet.classList.remove('visible'));
+
+            // --- 2. 进入多选管理模式 ---
+            menuMultiSelectBtn.addEventListener('click', () => {
+                stickerMenuActionSheet.classList.remove('visible');
+                enterStickerManageMode();
+            });
+
+            function enterStickerManageMode() {
+                isStickerManageMode = true;
+                stickerManageBar.style.display = 'block';
+                // 修改：不再隐藏分组栏，允许在管理模式下切换分组
+                // stickerCategoryBar.style.display = 'none'; 
+                
+                stickerMenuBtn.innerHTML = '<span style="font-size:14px; font-weight:bold; color:var(--primary-color);">完成</span>';
+                selectedStickerIds.clear();
+                updateStickerSelectCount();
+                renderStickerGrid(); // 重新渲染当前分组，显示选择圈
             }
 
-            batchAddStickerBtn.addEventListener('click', () => {
+            function exitStickerManageMode() {
+                isStickerManageMode = false;
+                stickerManageBar.style.display = 'none';
+                // stickerCategoryBar.style.display = 'flex'; // 不需要恢复显示，因为它一直都在
+                
+                stickerMenuBtn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>';
+                selectedStickerIds.clear();
+                renderStickerGrid();
+            }
+
+            function updateStickerSelectCount() {
+                const count = selectedStickerIds.size;
+                document.getElementById('sticker-select-count').textContent = `已选 ${count} 项`;
+                deleteSelectedStickersBtn.disabled = count === 0;
+                moveStickerGroupBtn.disabled = count === 0;
+            }
+
+            // --- 3. 批量导入 & 添加新表情 (复用原有逻辑) ---
+            menuBatchImportBtn.addEventListener('click', () => {
+                stickerMenuActionSheet.classList.remove('visible');
                 batchAddStickerModal.classList.add('visible');
-                stickerUrlsTextarea.value = ''; // 清空文本域
+                stickerUrlsTextarea.value = '';
+                batchStickerGroupInput.value = '';
             });
 
-            batchAddStickerForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const textInput = stickerUrlsTextarea.value.trim();
-                if (!textInput) {
-                    showToast('请输入表情包数据');
-                    return;
-                }
-
-                const lines = textInput.split('\n');
-                const newStickers = [];
-
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine) continue; // 跳过空行
-
-                    const colonIndex = trimmedLine.indexOf(':');
-                    
-                    // 验证格式：必须包含冒号，且冒号前后都有内容
-                    if (colonIndex <= 0) {
-                        console.warn(`格式错误，已跳过: ${trimmedLine}`);
-                        continue;
-                    }
-
-                    const name = trimmedLine.substring(0, colonIndex).trim();
-                    const url = trimmedLine.substring(colonIndex + 1).trim();
-
-                    if (name && url.startsWith('http')) {
-                        newStickers.push({
-                            id: `sticker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                            name: name,
-                            data: url
-                        });
-                    } else {
-                        console.warn(`数据无效，已跳过: name='${name}', url='${url}'`);
-                    }
-                }
-
-                if (newStickers.length > 0) {
-                    db.myStickers.push(...newStickers); // 一次性推入所有新表情
-                    await saveData();
-                    renderStickerGrid();
-                    batchAddStickerModal.classList.remove('visible');
-                    showToast(`成功导入 ${newStickers.length} 个新表情！`);
-                } else {
-                    showToast('未找到有效的表情包数据，请检查格式');
-                }
-            });
-
-            stickerToggleBtn.addEventListener('click', () => {
-                // Hide expansion panel if open
-                const chatExpansionPanel = document.getElementById('chat-expansion-panel');
-                if (chatExpansionPanel.classList.contains('visible')) {
-                    chatExpansionPanel.classList.remove('visible');
-                }
-                stickerModal.classList.toggle('visible');
-                if (stickerModal.classList.contains('visible')) {
-                    renderStickerGrid();
-                }
-            });
-            addNewStickerBtn.addEventListener('click', () => {
+            menuAddNewBtn.addEventListener('click', () => {
+                stickerMenuActionSheet.classList.remove('visible');
                 addStickerModalTitle.textContent = '添加新表情';
                 addStickerForm.reset();
                 stickerEditIdInput.value = '';
@@ -13517,30 +13794,166 @@ return `${seconds}秒`;
                 stickerUrlInput.disabled = false;
                 addStickerModal.classList.add('visible');
             });
+
+                        // --- 新增：全选功能 ---
+                        selectAllStickersBtn.addEventListener('click', () => {
+                let stickersToSelect = [];
+                
+                // 逻辑与渲染网格时一致，确保只全选当前看得到的
+                if (currentStickerCategory === 'recent') {
+                    stickersToSelect = [...db.myStickers]
+                        .sort((a, b) => (b.lastUsedTime || 0) - (a.lastUsedTime || 0))
+                        .slice(0, 20);
+                } else if (currentStickerCategory === 'all') {
+                    stickersToSelect = [...db.myStickers];
+                } else if (currentStickerCategory === 'ungrouped') {
+                    stickersToSelect = db.myStickers.filter(s => !s.group);
+                } else {
+                    stickersToSelect = db.myStickers.filter(s => s.group === currentStickerCategory);
+                }
+
+                // 将筛选出的表情ID全部加入选中集合
+                stickersToSelect.forEach(s => selectedStickerIds.add(s.id));
+                
+                // 更新界面
+                updateStickerSelectCount();
+                renderStickerGrid();
+                showToast(`已全选当前分组 ${stickersToSelect.length} 个表情`);
+            });
+
+            // --- 4. 删除功能 (已修复持久化问题) ---
+            deleteSelectedStickersBtn.addEventListener('click', async () => {
+                if (selectedStickerIds.size === 0) return;
+                if (confirm(`确定要删除这 ${selectedStickerIds.size} 个表情吗？`)) {
+                    const idsToDelete = Array.from(selectedStickerIds);
+
+                    // 1. 关键修复：显式从数据库中物理删除这些ID
+                    await dexieDB.myStickers.bulkDelete(idsToDelete);
+
+                    // 2. 从内存数据中移除
+                    db.myStickers = db.myStickers.filter(s => !selectedStickerIds.has(s.id));
+                    
+                    // 3. 保存内存变动（虽然bulkDelete已经处理了数据库，但为了保持一致性建议保留）
+                    await saveData();
+                    
+                    showToast('表情已彻底删除');
+                    exitStickerManageMode();
+                }
+            });
+
+
+            // --- 5. 移动分组功能 ---
+            moveStickerGroupBtn.addEventListener('click', () => {
+                // 填充 datalist 供自动补全
+                existingGroupsList.innerHTML = '';
+                const groups = [...new Set(db.myStickers.map(s => s.group).filter(g => g))];
+                groups.forEach(g => {
+                    const option = document.createElement('option');
+                    option.value = g;
+                    existingGroupsList.appendChild(option);
+                });
+                
+                moveTargetGroupInput.value = '';
+                moveStickerModal.classList.add('visible');
+            });
+
+            cancelMoveStickerBtn.addEventListener('click', () => moveStickerModal.classList.remove('visible'));
+
+            confirmMoveStickerBtn.addEventListener('click', async () => {
+                const newGroup = moveTargetGroupInput.value.trim();
+                // 允许空分组（即移出分组）
+                
+                db.myStickers.forEach(s => {
+                    if (selectedStickerIds.has(s.id)) {
+                        s.group = newGroup;
+                    }
+                });
+                
+                await saveData();
+                showToast('分组已更新');
+                moveStickerModal.classList.remove('visible');
+                exitStickerManageMode();
+                // 如果当前就在这个分组，刷新显示；否则可能表情会消失（因为移走了）
+                if (currentStickerCategory !== 'all' && currentStickerCategory !== 'recent' && currentStickerCategory !== newGroup) {
+                    // 可以在这里选择跳转到新分组，或者保持不动
+                }
+                renderStickerCategories(); // 刷新分类栏（可能新增了分类）
+                renderStickerGrid();
+            });
+
+            // --- 6. 分类栏点击事件 ---
+            stickerCategoryBar.addEventListener('click', (e) => {
+                const item = e.target.closest('.sticker-category-item');
+                if (item) {
+                    currentStickerCategory = item.dataset.category;
+                    renderStickerCategories(); // 更新高亮
+                    renderStickerGrid(); // 更新网格
+                }
+            });
+
+            // --- 7. 绑定原有表单提交事件 (保持不变) ---
+            batchAddStickerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const textInput = stickerUrlsTextarea.value.trim();
+                const groupName = batchStickerGroupInput.value.trim();
+                if (!textInput) return showToast('请输入数据');
+                const lines = textInput.split('\n');
+                const newStickers = [];
+                for (const line of lines) {
+                    let trimmedLine = line.trim().replace('：', ':');
+                    if (!trimmedLine) continue;
+                    const colonIndex = trimmedLine.indexOf(':');
+                    if (colonIndex <= 0) continue;
+                    const name = trimmedLine.substring(0, colonIndex).trim();
+                    const url = trimmedLine.substring(colonIndex + 1).trim();
+                    if (name && url.startsWith('http')) {
+                        newStickers.push({
+                            id: `sticker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                            name: name,
+                            data: url,
+                            group: groupName,
+                            lastUsedTime: Date.now() // 新增：初始化时间
+                        });
+                    }
+                }
+                if (newStickers.length > 0) {
+                    db.myStickers.push(...newStickers);
+                    await saveData();
+                    batchAddStickerModal.classList.remove('visible');
+                    showToast(`导入 ${newStickers.length} 个表情`);
+                    renderStickerCategories();
+                    renderStickerGrid();
+                } else {
+                    showToast('格式错误');
+                }
+            });
+
             addStickerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const name = stickerNameInput.value.trim();
+                const group = stickerGroupInput.value.trim();
                 const id = stickerEditIdInput.value;
                 const previewImg = stickerPreview.querySelector('img');
                 const data = previewImg ? previewImg.src : null;
-                if (!name || !data) {
-                    return showToast('请填写表情名称并提供图片');
-                }
-                const stickerData = {name, data};
+                if (!name || !data) return showToast('请填写完整');
+                
+                const stickerData = { name, data, group, lastUsedTime: Date.now() };
+                
                 if (id) {
                     const index = db.myStickers.findIndex(s => s.id === id);
-                    if (index > -1) {
-                        db.myStickers[index] = {...db.myStickers[index], ...stickerData};
-                    }
+                    if (index > -1) db.myStickers[index] = { ...db.myStickers[index], ...stickerData };
                 } else {
                     stickerData.id = `sticker_${Date.now()}`;
                     db.myStickers.push(stickerData);
                 }
                 await saveData();
-                renderStickerGrid();
                 addStickerModal.classList.remove('visible');
-                showToast('表情包已保存');
+                showToast('保存成功');
+                renderStickerCategories();
+                renderStickerGrid();
             });
+            
+            // 绑定图片预览事件
             stickerUrlInput.addEventListener('input', (e) => {
                 stickerPreview.innerHTML = `<img src="${e.target.value}" alt="预览">`;
                 stickerFileUpload.value = '';
@@ -13554,65 +13967,99 @@ return `${seconds}秒`;
                         stickerUrlInput.value = '';
                         stickerUrlInput.disabled = true;
                     } catch (error) {
-                        console.error('表情包压缩失败:', error);
-                        showToast('表情包压缩失败，请重试');
+                        showToast('压缩失败');
                     }
                 }
             });
-            editStickerBtn.addEventListener('click', () => {
-                if (!currentStickerActionTarget) return;
-                const sticker = db.myStickers.find(s => s.id === currentStickerActionTarget);
-                if (sticker) {
-                    addStickerModalTitle.textContent = '编辑表情';
-                    stickerEditIdInput.value = sticker.id;
-                    stickerNameInput.value = sticker.name;
-                    stickerPreview.innerHTML = `<img src="${sticker.data}" alt="预览">`;
-                    if (sticker.data.startsWith('http')) {
-                        stickerUrlInput.value = sticker.data;
-                        stickerUrlInput.disabled = false;
-                    } else {
-                        stickerUrlInput.value = '';
-                        stickerUrlInput.disabled = true;
-                    }
-                    addStickerModal.classList.add('visible');
+
+            // 绑定主界面开关按钮
+            const stickerToggleBtn = document.getElementById('sticker-toggle-btn');
+            stickerToggleBtn.addEventListener('click', () => {
+                const modal = document.getElementById('sticker-modal');
+                const panel = document.getElementById('chat-expansion-panel');
+                panel.classList.remove('visible');
+                modal.classList.toggle('visible');
+                if (modal.classList.contains('visible')) {
+                    renderStickerCategories();
+                    renderStickerGrid();
                 }
-                stickerActionSheet.classList.remove('visible');
-                currentStickerActionTarget = null;
             });
-            deleteStickerBtn.addEventListener('click', async () => {
-                if (!currentStickerActionTarget) return;
-                const sticker = db.myStickers.find(s => s.id === currentStickerActionTarget);
-                if (sticker) {
-                    if (confirm(`确定要删除表情“${sticker.name}”吗？`)) {
-                        db.myStickers = db.myStickers.filter(s => s.id !== currentStickerActionTarget);
-                        await saveData();
-                        renderStickerGrid();
-                        showToast('表情已删除');
-                    }
-                }
-                stickerActionSheet.classList.remove('visible');
-                currentStickerActionTarget = null;
+        }
+
+
+
+        function renderStickerCategories() {
+            const bar = document.getElementById('sticker-category-bar');
+            bar.innerHTML = '';
+
+            // 获取所有不重复的分组
+            const groups = [...new Set(db.myStickers.map(s => s.group).filter(g => g))];
+            
+            // 定义固定分类
+            const categories = [
+                { id: 'recent', name: '最近使用' },
+                { id: 'all', name: '全部' },
+                ...groups.map(g => ({ id: g, name: g })),
+                { id: 'ungrouped', name: '未分类' }
+            ];
+
+            categories.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = `sticker-category-item ${currentStickerCategory === cat.id ? 'active' : ''}`;
+                item.textContent = cat.name;
+                item.dataset.category = cat.id;
+                bar.appendChild(item);
             });
         }
 
         function renderStickerGrid() {
-            stickerGridContainer.innerHTML = '';
-            if (db.myStickers.length === 0) {
-                stickerGridContainer.innerHTML = '<p style="color:#aaa; text-align:center;">还没有表情包，快去添加吧！</p>';
+            const container = document.getElementById('sticker-grid-container');
+            container.innerHTML = '';
+
+            let stickersToShow = [];
+
+            // 修改：无论是否在管理模式，都先根据 currentStickerCategory 进行筛选
+            // 移除了之前的 if (isStickerManageMode) { stickersToShow = [...db.myStickers]; } 逻辑
+
+            if (currentStickerCategory === 'recent') {
+                // 最近使用
+                stickersToShow = [...db.myStickers]
+                    .sort((a, b) => (b.lastUsedTime || 0) - (a.lastUsedTime || 0))
+                    .slice(0, 20);
+                if (stickersToShow.length === 0) {
+                    container.innerHTML = '<p style="color:#aaa; text-align:center; grid-column:1/-1; padding:20px;">还没有使用过表情包哦</p>';
+                    return;
+                }
+            } else if (currentStickerCategory === 'all') {
+                stickersToShow = [...db.myStickers];
+            } else if (currentStickerCategory === 'ungrouped') {
+                stickersToShow = db.myStickers.filter(s => !s.group);
+            } else {
+                stickersToShow = db.myStickers.filter(s => s.group === currentStickerCategory);
+            }
+
+            if (stickersToShow.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; text-align:center; grid-column:1/-1; padding:20px;">该分组下没有表情</p>';
                 return;
             }
-            db.myStickers.forEach(sticker => {
+
+            stickersToShow.forEach(sticker => {
                 const item = document.createElement('div');
                 item.className = 'sticker-item';
-                item.innerHTML = `<img src="${sticker.data}" alt="${sticker.name}"><span>${sticker.name}</span>`;
-
+                
+                // 如果在管理模式，添加样式和选中状态
                 if (isStickerManageMode) {
                     item.classList.add('is-managing');
                     if (selectedStickerIds.has(sticker.id)) {
                         item.classList.add('is-selected');
                     }
-                    // 在管理模式下，单击是选择/取消选择
-                    item.addEventListener('click', () => {
+                }
+                
+                item.innerHTML = `<img src="${sticker.data}" alt="${sticker.name}"><span style="font-size:10px; margin-top:4px; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; width:100%; text-align:center;">${sticker.name}</span>`;
+
+                item.addEventListener('click', () => {
+                    if (isStickerManageMode) {
+                        // 多选逻辑
                         if (selectedStickerIds.has(sticker.id)) {
                             selectedStickerIds.delete(sticker.id);
                             item.classList.remove('is-selected');
@@ -13620,31 +14067,23 @@ return `${seconds}秒`;
                             selectedStickerIds.add(sticker.id);
                             item.classList.add('is-selected');
                         }
-                        // 更新底部删除按钮的计数
-                        const deleteBtn = document.getElementById('delete-selected-stickers-btn');
-                        deleteBtn.textContent = `删除已选 (${selectedStickerIds.size})`;
-                        deleteBtn.disabled = selectedStickerIds.size === 0;
-                    });
-                } else {
-                    // 非管理模式下的原始逻辑
-                    item.addEventListener('click', () => sendSticker(sticker));
-                    item.addEventListener('contextmenu', (e) => { // 使用 contextmenu 替代 mousedown
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleStickerLongPress(sticker.id);
-                    });
-                    item.addEventListener('touchstart', (e) => {
-                        e.stopPropagation();
-                        longPressTimer = setTimeout(() => {
-                            handleStickerLongPress(sticker.id);
-                        }, 500);
-                    });
-                    item.addEventListener('touchend', () => clearTimeout(longPressTimer));
-                    item.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-                }
-                stickerGridContainer.appendChild(item);
+                        // 更新计数
+                        const count = selectedStickerIds.size;
+                        document.getElementById('sticker-select-count').textContent = `已选 ${count} 项`;
+                        document.getElementById('delete-selected-stickers-btn').disabled = count === 0;
+                        document.getElementById('move-sticker-group-btn').disabled = count === 0;
+                    } else {
+                        // 发送逻辑
+                        sendSticker(sticker);
+                    }
+                });
+
+                container.appendChild(item);
             });
         }
+
+
+
 
         function handleStickerLongPress(stickerId) {
             if (isStickerManageMode) return;
@@ -14388,6 +14827,49 @@ return `${seconds}秒`;
                 document.getElementById('setting-char-avatar-preview').src = e.avatar;
                 document.getElementById('setting-char-remark').value = e.remarkName;
                 document.getElementById('setting-char-persona').value = e.persona;
+                
+                // --- 修改开始：加载表情包分组复选框 ---
+                const stickerGroupsContainer = document.getElementById('setting-char-sticker-groups-container');
+                stickerGroupsContainer.innerHTML = '';
+                
+                // 获取所有不重复的分组名
+                const allGroups = [...new Set(db.myStickers.map(s => s.group || '未分类'))].filter(g => g);
+                const charGroups = (e.stickerGroups || '').split(/[,，]/).map(s => s.trim());
+
+                if (allGroups.length === 0) {
+                    stickerGroupsContainer.innerHTML = '<span style="color:#999; font-size:12px;">暂无表情包分组，请先在表情包管理中添加。</span>';
+                } else {
+                    allGroups.forEach(group => {
+                        const div = document.createElement('div');
+                        div.style.display = 'flex';
+                        div.style.alignItems = 'center';
+                        div.style.marginBottom = '8px';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.id = `group-select-${group}`;
+                        checkbox.value = group;
+                        checkbox.checked = charGroups.includes(group);
+                        checkbox.style.width = '18px';
+                        checkbox.style.height = '18px';
+                        checkbox.style.marginRight = '8px';
+                        checkbox.style.accentColor = 'var(--primary-color)';
+                        
+                        const label = document.createElement('label');
+                        label.htmlFor = `group-select-${group}`;
+                        label.textContent = group;
+                        label.style.marginBottom = '0';
+                        label.style.fontWeight = 'normal';
+                        label.style.fontSize = '14px';
+                        label.style.color = '#555';
+                        
+                        div.appendChild(checkbox);
+                        div.appendChild(label);
+                        stickerGroupsContainer.appendChild(div);
+                    });
+                }
+                // --- 修改结束 ---
+                
                 document.getElementById('setting-my-avatar-preview').src = e.myAvatar;
                 document.getElementById('setting-my-name').value = e.myName;
                 document.getElementById('setting-my-persona').value = e.myPersona;
@@ -14407,12 +14889,21 @@ return `${seconds}秒`;
             }
         }
 
+
         async function saveSettingsFromSidebar() {
             const e = db.characters.find(e => e.id === currentChatId);
             if (e) {
                 e.avatar = document.getElementById('setting-char-avatar-preview').src;
                 e.remarkName = document.getElementById('setting-char-remark').value;
                 e.persona = document.getElementById('setting-char-persona').value;
+                
+                // --- 修改开始：保存选中的分组 ---
+                const selectedGroups = Array.from(document.querySelectorAll('#setting-char-sticker-groups-container input:checked'))
+                    .map(cb => cb.value)
+                    .join(',');
+                e.stickerGroups = selectedGroups;
+                // --- 修改结束 ---
+
                 e.myAvatar = document.getElementById('setting-my-avatar-preview').src;
                 e.myName = document.getElementById('setting-my-name').value;
                 e.myPersona = document.getElementById('setting-my-persona').value;
@@ -14420,7 +14911,6 @@ return `${seconds}秒`;
                 e.maxMemory = document.getElementById('setting-max-memory').value;
                 e.useCustomBubbleCss = document.getElementById('setting-use-custom-css').checked;
                 e.customBubbleCss = document.getElementById('setting-custom-bubble-css').value;
-                // 在 e.customBubbleCss = ... 这一行下面添加
                 e.bilingualModeEnabled = document.getElementById('setting-bilingual-mode').checked;
 
                 await saveData();
@@ -14432,6 +14922,8 @@ return `${seconds}秒`;
                 renderMessages(false, true);
             }
         }
+
+
 
         function setupApiSettingsApp() {
             const e = document.getElementById('api-form'), t = document.getElementById('fetch-models-btn'),
@@ -16134,9 +16626,17 @@ function renderForumPosts(posts) {
                 return;
             }
 
-            // Check cache first
-            if (!forceRefresh && peekContentCache[appType]) {
-                const cachedData = peekContentCache[appType];
+            // 1. 获取当前角色
+            const char = db.characters.find(c => c.id === currentChatId);
+            if (!char) return showToast('无法找到当前角色');
+            
+            // 确保 peekData 存在
+            if (!char.peekData) char.peekData = {};
+
+            // 2. 检查是否有持久化存储的数据 (优先使用存储的数据)
+            if (!forceRefresh && char.peekData[appType]) {
+                const cachedData = char.peekData[appType];
+                // 直接渲染存储的数据
                 switch (appType) {
                     case 'messages':
                         renderPeekChatList(cachedData.conversations);
@@ -16149,10 +16649,6 @@ function renderForumPosts(posts) {
                     case 'memos':
                         renderMemosList(cachedData.memos);
                         switchScreen('peek-memos-screen');
-                        break;
-                    case 'album':
-                        renderPeekAlbum(cachedData.photos);
-                        switchScreen('peek-album-screen');
                         break;
                    case 'transfer':
                        renderPeekTransferStation(cachedData.entries);
@@ -16179,22 +16675,20 @@ function renderForumPosts(posts) {
                        switchScreen('peek-unlock-screen');
                        break;
                }
-               return; // Stop execution since we used cache
-           }
+               return; // 使用了存储数据，直接结束
+            }
 
-            const char = db.characters.find(c => c.id === currentChatId);
-            if (!char) return showToast('无法找到当前角色');
-
+            // 3. 如果没有数据或强制刷新，则调用 API 生成
             const { url, key, model, provider } = db.apiSettings;
             if (!url || !key || !model) {
                 showToast('请先在“api”应用中完成设置！');
                 return switchScreen('api-settings-screen');
             }
 
-            generatingPeekApps.add(appType); // Lock this specific app
+            generatingPeekApps.add(appType); // 锁定防止重复点击
             let targetContainer;
 
-            // Show loading state
+            // 显示加载状态 (保持原样)
             switch (appType) {
                 case 'messages':
                     switchScreen('peek-messages-screen');
@@ -16203,11 +16697,11 @@ function renderForumPosts(posts) {
                     break;
                 case 'album':
                     switchScreen('peek-album-screen');
-                    renderPeekAlbum([]); // 渲染空状态，会显示“正在生成...”
+                    renderPeekAlbum([]); 
                     break;
                 case 'memos':
                     switchScreen('peek-memos-screen');
-                    renderMemosList([]); // Render empty state with loading text
+                    renderMemosList([]); 
                     break;
                case 'transfer':
                    switchScreen('peek-transfer-station-screen');
@@ -16227,15 +16721,15 @@ function renderForumPosts(posts) {
                     break;
                 case 'steps':
                     switchScreen('peek-steps-screen');
-                    renderPeekSteps(null); // Render empty state
+                    renderPeekSteps(null); 
                     break;
                case 'unlock':
                    switchScreen('peek-unlock-screen');
-                   renderPeekUnlock(null); // Render empty/loading state
+                   renderPeekUnlock(null); 
                    break;
                default:
                    showToast('无法打开');
-                   generatingPeekApps.delete(appType); // Unlock if app is invalid
+                   generatingPeekApps.delete(appType); 
                    return;
            }
 
@@ -16268,7 +16762,7 @@ function renderForumPosts(posts) {
                 
                 const generatedData = JSON.parse(jsonMatch[0]);
 
-                // --- NEW: Strict data validation ---
+                // 数据验证 (保持原样)
                 let isValid = false;
                 switch (appType) {
                     case 'messages': isValid = generatedData && Array.isArray(generatedData.conversations); break;
@@ -16286,12 +16780,12 @@ function renderForumPosts(posts) {
                 if (!isValid) {
                     throw new Error("AI返回的数据格式不符合应用要求。");
                 }
-                // --- END: Strict data validation ---
 
-                // Store in cache
-                peekContentCache[appType] = generatedData;
+                // 4. 关键修改：将生成的数据保存到角色对象中，并持久化到数据库
+                char.peekData[appType] = generatedData;
+                await saveData(); // 保存到 IndexedDB
 
-                // Render content based on app type
+                // 渲染内容 (保持原样)
                 if (appType === 'messages') {
                     renderPeekChatList(generatedData.conversations);
                 } else if (appType === 'memos') {
@@ -16314,9 +16808,9 @@ function renderForumPosts(posts) {
 
             } catch (error) {
                 showApiError(error);
-                // Clear cache for this app on failure
-                delete peekContentCache[appType];
+                // 生成失败不保存，也不清除旧数据（如果有的话）
                 const errorMessage = "内容生成失败，请刷新重试。";
+                // ... 错误提示 UI (保持原样) ...
                 if (appType === 'album') {
                     document.querySelector('#peek-album-screen .album-grid').innerHTML = `<p class="placeholder-text">${errorMessage}</p>`;
                 } else if (appType === 'unlock') {
@@ -16325,9 +16819,10 @@ function renderForumPosts(posts) {
                     targetContainer.innerHTML = `<p class="placeholder-text">${errorMessage}</p>`;
                 }
             } finally {
-                generatingPeekApps.delete(appType); // Release the lock for this specific app
+                generatingPeekApps.delete(appType); 
             }
         }
+
 
         function renderPeekSettings() {
             const character = db.characters.find(c => c.id === currentChatId);
