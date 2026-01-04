@@ -13655,37 +13655,6 @@ return `${seconds}秒`;
                 return;
             }
             
-            // --- 新增：回溯状态逻辑 ---
-            if (currentChatType === 'private') {
-                let foundStatus = false;
-                // 构造匹配状态更新的正则，与接收消息时的逻辑保持一致
-                const updateStatusRegex = new RegExp(`\\[${chat.realName}更新状态为：(.*?)\\]`);
-                
-                // 从后往前遍历剩余的历史记录，寻找最近一次的状态更新
-                for (let i = chat.history.length - 1; i >= 0; i--) {
-                    const msg = chat.history[i];
-                    // 检查消息内容是否包含状态更新指令
-                    const match = msg.content.match(updateStatusRegex);
-                    if (match) {
-                        chat.status = match[1]; // 恢复为找到的状态
-                        foundStatus = true;
-                        break; // 找到了最近的状态，停止遍历
-                    }
-                }
-                
-                // 如果遍历完都没找到任何状态更新指令，重置为默认状态“在线”
-                if (!foundStatus) {
-                    chat.status = '在线'; 
-                }
-                
-                // 立即更新顶部标题栏的状态显示文字
-                const statusTextEl = document.getElementById('chat-room-status-text');
-                if (statusTextEl) {
-                    statusTextEl.textContent = chat.status;
-                }
-            }
-            // --- 新增结束 ---
-
             await saveData();
             
             // 3. 重新渲染消息区域
@@ -13695,7 +13664,6 @@ return `${seconds}秒`;
             // 4. 重新触发AI回复
             await getAiReply(currentChatId, currentChatType);
         }
-
 
         // --- Other Sub-systems Setup (Stickers, Voice, etc.) ---
         function setupImageRecognition() {
