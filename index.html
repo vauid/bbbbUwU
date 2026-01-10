@@ -57,8 +57,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
             overflow: hidden;
+            padding-bottom: env(safe-area-inset-bottom);
+            box-sizing: border-box;
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
         }
 
         .phone-screen {
@@ -17115,6 +17118,7 @@ function renderForumPosts(posts) {
 </body>
 
 </html>
+
 
 
 
